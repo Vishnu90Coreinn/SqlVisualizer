@@ -1,15 +1,17 @@
-import type { RelKind, RelEdgeKind, ColumnRole, FlowStageKind } from '../sql/types';
+import type { RelKind, RelEdgeKind, ColumnRole, FlowStageKind, SchemaNodeRole } from '../sql/types';
 
 export const KIND_COLOR: Record<RelKind, string> = {
   table: '#4fd6e0',
   cte: '#f0a93f',
   subquery: '#b08af0',
+  'write-target': '#f0708c',
 };
 
 export const KIND_LABEL: Record<RelKind, string> = {
   table: 'TABLE',
   cte: 'CTE',
   subquery: 'SUBQUERY',
+  'write-target': 'WRITE TARGET',
 };
 
 export const ROLE_COLOR: Record<ColumnRole, string> = {
@@ -52,4 +54,23 @@ export const STAGE_COLOR: Record<FlowStageKind, string> = {
   orderby: '#7c879f',
   limit: '#7c879f',
   union: '#f0a93f',
+};
+
+export const SCHEMA_NODE_ROLE_COLOR: Record<SchemaNodeRole, string> = {
+  standalone: '#4fd6e0',
+  parent: '#f0a93f',
+  junction: '#b08af0',
+};
+
+export const FK_EDGE_COLOR = '#4fd6e0';
+
+export const JOIN_TYPE_COLOR: Record<string, string> = {
+  'INNER JOIN': '#4fd6e0',
+  'LEFT JOIN': '#5b8ef0',
+  'LEFT OUTER JOIN': '#5b8ef0',
+  'RIGHT JOIN': '#b08af0',
+  'RIGHT OUTER JOIN': '#b08af0',
+  'FULL JOIN': '#f0a93f',
+  'FULL OUTER JOIN': '#f0a93f',
+  'CROSS JOIN': '#f0708c',
 };

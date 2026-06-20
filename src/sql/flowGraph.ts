@@ -51,6 +51,11 @@ function buildPipelineForSelect(
       if (entry.join) {
         const cond = entry.on ? exprToSql(entry.on, database) : '';
         const id = push('join', entry.join, `${entry.join} ${tname}${alias ? ' ' + alias : ''}${cond ? `\nON ${truncate(cond, 50)}` : ''}`);
+        // Warn on cross join right here while we have the correct node id
+        if (!entry.on) {
+          const node = nodes.find((n) => n.id === id);
+          if (node) node.warnings = [...(node.warnings ?? []), 'cross join — no ON condition'];
+        }
         chain.push(id);
         fromJoinRefs.push({ nodeId: id, tableName: tname });
       } else {
@@ -61,6 +66,15 @@ function buildPipelineForSelect(
     }
   }
 
+  // Detect likely full scan: 2+ tables joined but no WHERE clause
+  const joinCount = fromList.filter((e: any) => e.join).length;
+  if (joinCount >= 1 && !selectAst.where && chain.length > 0) {
+    const firstFromNode = nodes.find((n) => n.id === chain[0]);
+    if (firstFromNode) {
+      firstFromNode.warnings = [...(firstFromNode.warnings ?? []), 'full scan likely — no WHERE'];
+    }
+  }
+
   if (selectAst.where) {
     const subs = findSubqueries(selectAst.where);
     for (const sub of subs) {
@@ -68,6 +82,11 @@ function buildPipelineForSelect(
       const id = push('subquery', sub.context.toUpperCase(), `${sub.context.toUpperCase()} (\n  ${snippet}\n)`);
       // side node, will connect into WHERE below once WHERE id is known
       (sub as any)._flowId = id;
+      // Flag EXISTS subqueries as potentially correlated
+      if (sub.context === 'exists') {
+        const subNode = nodes.find((n) => n.id === id);
+        if (subNode) subNode.warnings = [...(subNode.warnings ?? []), 'may run per row (correlated)'];
+      }
     }
     const whereId = push('where', 'WHERE', `WHERE ${truncate(exprToSql(selectAst.where, database), 70)}`);
     for (const sub of subs) link((sub as any)._flowId, whereId, 'evaluated in');

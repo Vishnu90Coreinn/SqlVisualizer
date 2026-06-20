@@ -1,11 +1,13 @@
 export interface SampleQuery {
   label: string;
+  description: string;
   sql: string;
 }
 
 export const SAMPLE_QUERIES: SampleQuery[] = [
   {
     label: 'Simple join',
+    description: 'JOIN two tables with WHERE and ORDER BY',
     sql: `SELECT o.id, o.amount, c.customer_name, c.region
 FROM orders o
 JOIN customers c ON o.customer_id = c.id
@@ -14,6 +16,7 @@ ORDER BY o.amount DESC;`,
   },
   {
     label: 'CTE + window function',
+    description: 'Multi-CTE with RANK() OVER and an IN subquery',
     sql: `WITH regional_sales AS (
   SELECT region, SUM(amount) AS total_sales
   FROM orders
@@ -38,6 +41,7 @@ LIMIT 10;`,
   },
   {
     label: 'Nested subquery + EXISTS',
+    description: 'Derived table in FROM with a correlated EXISTS',
     sql: `SELECT t.id, t.total
 FROM (
   SELECT customer_id AS id, SUM(amount) AS total
@@ -51,7 +55,8 @@ WHERE EXISTS (
 ORDER BY t.total DESC;`,
   },
   {
-    label: 'Three-way join chain',
+    label: 'Four-way join chain',
+    description: 'LEFT JOIN across four tables in one query',
     sql: `SELECT p.name, o.id AS order_id, s.shipped_at
 FROM orders o
 LEFT JOIN order_items oi ON oi.order_id = o.id

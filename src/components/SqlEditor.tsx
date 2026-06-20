@@ -1,49 +1,112 @@
-import { useRef } from 'react';
+import { useMemo } from 'react';
+import CodeMirror from '@uiw/react-codemirror';
+import { sql, PostgreSQL, MySQL, SQLite, MSSQL, StandardSQL, type SQLDialect } from '@codemirror/lang-sql';
+import { EditorView, Decoration } from '@codemirror/view';
+import type { Extension } from '@codemirror/state';
+
+const dialectMap: Record<string, SQLDialect | undefined> = {
+  PostgreSQL,
+  MySQL,
+  Sqlite: SQLite,
+  TransactSQL: MSSQL,
+  BigQuery: StandardSQL,
+  Snowflake: StandardSQL,
+};
+
+const BASIC_SETUP = {
+  lineNumbers: true,
+  highlightActiveLine: true,
+  bracketMatching: true,
+  autocompletion: false,
+  foldGutter: false,
+  indentOnInput: true,
+} as const;
+
+const baseTheme = EditorView.theme(
+  {
+    '&': { height: '100%', background: 'var(--color-bg-raised)' },
+    '.cm-scroller': {
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      lineHeight: '20px',
+      overflow: 'auto',
+    },
+    '.cm-content': { padding: '12px 12px 12px 0', caretColor: 'var(--color-amber)' },
+    '.cm-line': { padding: '0 12px' },
+    '.cm-cursor': { borderLeftColor: 'var(--color-amber)' },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
+      background: 'rgba(240,169,63,0.2) !important',
+    },
+    '.cm-activeLine': { background: 'rgba(255,255,255,0.025)' },
+    '.cm-gutters': {
+      background: 'var(--color-surface)',
+      borderRight: '1px solid var(--color-border)',
+      color: 'var(--color-text-faint)',
+      minWidth: '36px',
+    },
+    '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px' },
+    '.cm-activeLineGutter': {
+      background: 'var(--color-surface-2)',
+      color: 'var(--color-text-dim)',
+    },
+    '.cm-error-line': { background: 'rgba(240,112,140,0.12)' },
+    '.cm-matchingBracket': {
+      background: 'rgba(240,169,63,0.2)',
+      color: 'var(--color-amber) !important',
+      outline: 'none',
+    },
+  },
+  { dark: true }
+);
+
+// Decoration is tied to the extension instance (compute with empty deps), not live document
+// positions. Parent re-derives errorLine on every parse so the 350ms debounce bounds the drift.
+function errorLineExt(errorLine: number | undefined): Extension {
+  if (!errorLine) return [];
+  return EditorView.decorations.compute([], (state) => {
+    try {
+      const line = state.doc.line(errorLine);
+      return Decoration.set([Decoration.line({ class: 'cm-error-line' }).range(line.from)]);
+    } catch {
+      return Decoration.none;
+    }
+  });
+}
 
 export default function SqlEditor({
   value,
   onChange,
   errorLine,
+  dialect,
 }: {
   value: string;
   onChange: (v: string) => void;
   errorLine?: number;
+  dialect?: string;
 }) {
-  const gutterRef = useRef<HTMLDivElement>(null);
-  const lines = value.split('\n').length;
-
-  function syncScroll(e: React.UIEvent<HTMLTextAreaElement>) {
-    if (gutterRef.current) gutterRef.current.scrollTop = e.currentTarget.scrollTop;
-  }
+  const extensions = useMemo(
+    () => [
+      sql({ dialect: dialect ? dialectMap[dialect] : undefined }),
+      baseTheme,
+      errorLineExt(errorLine),
+    ],
+    [errorLine, dialect]
+  );
 
   return (
-    <div className="flex h-full rounded-lg border overflow-hidden" style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-raised)' }}>
-      <div
-        ref={gutterRef}
-        className="select-none text-right py-3 pl-3 pr-2 text-[12px] overflow-hidden shrink-0"
-        style={{ color: 'var(--color-text-faint)', lineHeight: '20px', background: 'var(--color-surface)' }}
-      >
-        {Array.from({ length: Math.max(lines, 1) }, (_, i) => (
-          <div
-            key={i}
-            style={{
-              color: errorLine === i + 1 ? 'var(--color-rose)' : undefined,
-              fontWeight: errorLine === i + 1 ? 700 : undefined,
-            }}
-          >
-            {i + 1}
-          </div>
-        ))}
-      </div>
-      <textarea
-        spellCheck={false}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onScroll={syncScroll}
-        placeholder="Paste a SQL query here..."
-        className="flex-1 resize-none py-3 px-3 text-[12px] outline-none bg-transparent"
-        style={{ color: 'var(--color-text)', lineHeight: '20px', caretColor: 'var(--color-amber)' }}
-      />
-    </div>
+    <CodeMirror
+      value={value}
+      onChange={(v) => onChange(v)}
+      extensions={extensions}
+      height="100%"
+      placeholder="Paste a SQL query here..."
+      basicSetup={BASIC_SETUP}
+      style={{
+        height: '100%',
+        overflow: 'hidden',
+        borderRadius: '8px',
+        border: '1px solid var(--color-border)',
+      }}
+    />
   );
 }

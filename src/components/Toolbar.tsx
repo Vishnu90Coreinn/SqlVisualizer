@@ -1,4 +1,6 @@
 import { SAMPLE_QUERIES } from '../lib/sampleQueries';
+import { DDL_SAMPLE_QUERIES } from '../lib/ddlSampleQueries';
+import type { AppMode } from './ModeToggle';
 
 const DIALECTS = ['PostgreSQL', 'MySQL', 'TransactSQL', 'Sqlite', 'BigQuery', 'Snowflake'];
 
@@ -10,19 +12,24 @@ const selectStyle: React.CSSProperties = {
 
 export default function Toolbar({
   database,
+  mode,
   onDatabaseChange,
   onPickSample,
 }: {
   database: string;
+  mode: AppMode;
   onDatabaseChange: (db: string) => void;
   onPickSample: (sql: string) => void;
 }) {
+  const samples = mode === 'schema' ? DDL_SAMPLE_QUERIES : SAMPLE_QUERIES;
+
   return (
     <div className="flex items-center gap-2">
       <select
+        key={mode}
         defaultValue=""
         onChange={(e) => {
-          const q = SAMPLE_QUERIES.find((s) => s.label === e.target.value);
+          const q = samples.find((s) => s.label === e.target.value);
           if (q) onPickSample(q.sql);
           e.target.value = '';
         }}
@@ -30,9 +37,9 @@ export default function Toolbar({
         style={selectStyle}
       >
         <option value="" disabled>
-          Try a sample query…
+          {mode === 'schema' ? 'Try a DDL sample…' : 'Try a sample query…'}
         </option>
-        {SAMPLE_QUERIES.map((q) => (
+        {samples.map((q) => (
           <option key={q.label} value={q.label}>
             {q.label}
           </option>
