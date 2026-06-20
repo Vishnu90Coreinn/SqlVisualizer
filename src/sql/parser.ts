@@ -1,6 +1,7 @@
 import { parser } from './astHelpers';
 import { buildRelationshipGraph } from './relationshipGraph';
 import { buildFlowGraph } from './flowGraph';
+import { buildWriteImpactGraph } from './writeImpactGraph';
 import type { ParseResult } from './types';
 
 export function parseSql(sql: string, database: string): ParseResult {
@@ -25,10 +26,26 @@ export function parseSql(sql: string, database: string): ParseResult {
 
   const statement = Array.isArray(ast) ? ast[0] : ast;
 
-  if (!statement || statement.type !== 'select') {
+  if (!statement) {
+    return { ok: false, error: 'Could not parse this SQL.' };
+  }
+
+  if (statement.type !== 'select') {
+    const dmlTypes = ['insert', 'update', 'delete'];
+    if (dmlTypes.includes(statement.type)) {
+      try {
+        const relationship = buildWriteImpactGraph(statement, database);
+        return { ok: true, relationship };
+      } catch (e: any) {
+        return {
+          ok: false,
+          error: `Parsed ${statement.type.toUpperCase()}, but failed to build diagram: ${e?.message ?? 'unknown error'}`,
+        };
+      }
+    }
     return {
       ok: false,
-      error: 'Only SELECT statements (including CTEs and subqueries) can be visualized right now.',
+      error: 'Only SELECT, INSERT, UPDATE, and DELETE statements can be visualized right now.',
     };
   }
 
@@ -43,4 +60,17 @@ export function parseSql(sql: string, database: string): ParseResult {
 
 function cleanErrorMessage(message: string): string {
   return message.split('\n')[0].replace(/^Expected\s+/, 'Expected ');
+}
+
+export function parseMultiStatement(sql: string, database: string): ParseResult[] {
+  const statements = sql
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  if (statements.length <= 1) {
+    return [parseSql(sql, database)];
+  }
+
+  return statements.map((stmt) => parseSql(stmt + ';', database));
 }

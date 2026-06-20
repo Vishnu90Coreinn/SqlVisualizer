@@ -4,12 +4,14 @@ export const KIND_COLOR: Record<RelKind, string> = {
   table: '#4fd6e0',
   cte: '#f0a93f',
   subquery: '#b08af0',
+  'write-target': '#f0708c',
 };
 
 export const KIND_LABEL: Record<RelKind, string> = {
   table: 'TABLE',
   cte: 'CTE',
   subquery: 'SUBQUERY',
+  'write-target': 'WRITE TARGET',
 };
 
 export const ROLE_COLOR: Record<ColumnRole, string> = {

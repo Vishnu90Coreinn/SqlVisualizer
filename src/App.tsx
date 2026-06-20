@@ -7,7 +7,8 @@ import ModeToggle, { type AppMode } from './components/ModeToggle';
 import SampleGrid from './components/SampleGrid';
 import DiagramCanvas, { type DiagramCanvasHandle, type ViewMode } from './components/DiagramCanvas';
 import Legend from './components/Legend';
-import { parseSql } from './sql/parser';
+import { parseMultiStatement } from './sql/parser';
+import StatementTabs from './components/StatementTabs';
 import { parseDDL } from './sql/ddlParser';
 import { buildSchemaGraph } from './sql/schemaGraph';
 import { SAMPLE_QUERIES } from './lib/sampleQueries';
@@ -19,7 +20,8 @@ export default function App() {
   const [sql, setSql] = useState(() => decodeUrlState().sql ?? '');
   const [database, setDatabase] = useState(() => decodeUrlState().dialect ?? 'PostgreSQL');
   const [view, setView] = useState<ViewMode>('relationship');
-  const [result, setResult] = useState<ParseResult>({ ok: false });
+  const [results, setResults] = useState<ParseResult[]>([{ ok: false }]);
+  const [selectedIdx, setSelectedIdx] = useState(0);
   const [mode, setMode] = useState<AppMode>(() => decodeUrlState().mode ?? 'query');
   const canvasRef = useRef<DiagramCanvasHandle>(null);
   const [schemaSql, setSchemaSql] = useState(DDL_SAMPLE_QUERIES[1].sql);
@@ -28,7 +30,9 @@ export default function App() {
 
   useEffect(() => {
     const handle = setTimeout(() => {
-      setResult(parseSql(sql, database));
+      const parsed = parseMultiStatement(sql, database);
+      setResults(parsed);
+      setSelectedIdx(0);
     }, 350);
     return () => clearTimeout(handle);
   }, [sql, database]);
@@ -61,7 +65,9 @@ export default function App() {
       if (!mod) return;
       if (e.key === 'Enter') {
         e.preventDefault();
-        setResult(parseSql(sql, database));
+        const parsed = parseMultiStatement(sql, database);
+        setResults(parsed);
+        setSelectedIdx(0);
       }
       if (e.shiftKey && e.key === 'F') {
         e.preventDefault();
@@ -80,7 +86,14 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [sql, database]);
 
+  const result = results[selectedIdx] ?? { ok: false };
   const showCanvas = result.ok;
+
+  useEffect(() => {
+    if (result.ok && !result.flow && view === 'flow') {
+      setView('relationship');
+    }
+  }, [result]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -98,7 +111,7 @@ export default function App() {
         <div className="flex-1" />
         <div className="flex items-center gap-2">
           <ModeToggle mode={mode} onChange={setMode} />
-          {mode === 'query' && <ViewToggle view={view} onChange={setView} />}
+          {mode === 'query' && result.flow && <ViewToggle view={view} onChange={setView} />}
           <button
             onClick={() => canvasRef.current?.exportPng()}
             title="Export PNG (Ctrl+Shift+E)"
@@ -158,28 +171,37 @@ export default function App() {
           {mode === 'query' && <Legend view={view} />}
         </section>
 
-        <section className="flex-1 relative min-h-[360px]">
-          {mode === 'schema' ? (
-            schemaGraph ? (
-              <DiagramCanvas
-                ref={canvasRef}
-                result={{ ok: true, schema: schemaGraph }}
-                view="schema"
-              />
-            ) : (
-              <SchemaEmptyState error={schemaError} />
-            )
-          ) : sql.trim() === '' ? (
-            <SampleGrid
-              samples={SAMPLE_QUERIES}
-              prompt="Paste a SELECT query — or pick a sample to get started:"
-              onSelect={setSql}
+        <section className="flex-1 flex flex-col min-h-[360px]">
+          {mode === 'query' && results.length > 1 && (
+            <StatementTabs
+              count={results.length}
+              selected={selectedIdx}
+              onSelect={setSelectedIdx}
             />
-          ) : showCanvas ? (
-            <DiagramCanvas ref={canvasRef} result={result} view={view} />
-          ) : (
-            <EmptyState hasError={!result.ok && !!result.error} />
           )}
+          <div className="flex-1 relative">
+            {mode === 'schema' ? (
+              schemaGraph ? (
+                <DiagramCanvas
+                  ref={canvasRef}
+                  result={{ ok: true, schema: schemaGraph }}
+                  view="schema"
+                />
+              ) : (
+                <SchemaEmptyState error={schemaError} />
+              )
+            ) : sql.trim() === '' ? (
+              <SampleGrid
+                samples={SAMPLE_QUERIES}
+                prompt="Paste a SELECT query — or pick a sample to get started:"
+                onSelect={setSql}
+              />
+            ) : showCanvas ? (
+              <DiagramCanvas ref={canvasRef} result={result} view={view} />
+            ) : (
+              <EmptyState hasError={!result.ok && !!result.error} />
+            )}
+          </div>
         </section>
       </main>
     </div>
