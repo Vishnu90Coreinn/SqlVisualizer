@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
-import { Network, AlertTriangle, Download, Link } from 'lucide-react';
+import { Network, AlertTriangle, Download, Link, Database } from 'lucide-react';
 import SqlEditor from './components/SqlEditor';
 import Toolbar from './components/Toolbar';
 import ViewToggle from './components/ViewToggle';
+import ModeToggle, { type AppMode } from './components/ModeToggle';
+import SampleGrid from './components/SampleGrid';
 import DiagramCanvas, { type DiagramCanvasHandle, type ViewMode } from './components/DiagramCanvas';
 import Legend from './components/Legend';
 import { parseSql } from './sql/parser';
@@ -11,10 +13,11 @@ import type { ParseResult } from './sql/types';
 import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
 
 export default function App() {
-  const [sql, setSql] = useState(() => decodeUrlState().sql ?? SAMPLE_QUERIES[1].sql);
+  const [sql, setSql] = useState(() => decodeUrlState().sql ?? '');
   const [database, setDatabase] = useState(() => decodeUrlState().dialect ?? 'PostgreSQL');
   const [view, setView] = useState<ViewMode>('relationship');
   const [result, setResult] = useState<ParseResult>({ ok: false });
+  const [mode, setMode] = useState<AppMode>(() => decodeUrlState().mode ?? 'query');
   const canvasRef = useRef<DiagramCanvasHandle>(null);
 
   useEffect(() => {
@@ -25,9 +28,33 @@ export default function App() {
   }, [sql, database]);
 
   useEffect(() => {
-    // TODO(A5): replace 'query' with actual mode state once ModeToggle is added
-    encodeUrlState({ mode: 'query', dialect: database, sql });
-  }, [database, sql]);
+    encodeUrlState({ mode, dialect: database, sql });
+  }, [mode, database, sql]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        setResult(parseSql(sql, database));
+      }
+      if (e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        canvasRef.current?.fitView();
+      }
+      if (e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        canvasRef.current?.exportPng();
+      }
+      if (e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        copyShareLink();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [sql, database]);
 
   const showCanvas = result.ok;
 
@@ -45,23 +72,26 @@ export default function App() {
           paste a query, see how it actually runs
         </span>
         <div className="flex-1" />
-        <button
-          onClick={() => canvasRef.current?.exportPng()}
-          title="Export PNG (Ctrl+Shift+E)"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
-          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
-        >
-          <Download size={13} strokeWidth={2.25} />
-        </button>
-        <button
-          onClick={() => copyShareLink()}
-          title="Copy share link (Ctrl+Shift+C)"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
-          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
-        >
-          <Link size={13} strokeWidth={2.25} />
-        </button>
-        <ViewToggle view={view} onChange={setView} />
+        <div className="flex items-center gap-2">
+          <ModeToggle mode={mode} onChange={setMode} />
+          {mode === 'query' && <ViewToggle view={view} onChange={setView} />}
+          <button
+            onClick={() => canvasRef.current?.exportPng()}
+            title="Export PNG (Ctrl+Shift+E)"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+          >
+            <Download size={13} strokeWidth={2.25} />
+          </button>
+          <button
+            onClick={() => copyShareLink()}
+            title="Copy link (Ctrl+Shift+C)"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+          >
+            <Link size={13} strokeWidth={2.25} />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 flex flex-col lg:flex-row min-h-0">
@@ -82,11 +112,19 @@ export default function App() {
               <span>{result.error}</span>
             </div>
           )}
-          <Legend view={view} />
+          {mode === 'query' && <Legend view={view} />}
         </section>
 
         <section className="flex-1 relative min-h-[360px]">
-          {showCanvas ? (
+          {mode === 'schema' ? (
+            <SchemaPlaceholder />
+          ) : sql.trim() === '' ? (
+            <SampleGrid
+              samples={SAMPLE_QUERIES}
+              prompt="Paste a SELECT query — or pick a sample to get started:"
+              onSelect={setSql}
+            />
+          ) : showCanvas ? (
             <DiagramCanvas ref={canvasRef} result={result} view={view} />
           ) : (
             <EmptyState hasError={!result.ok && !!result.error} />
@@ -104,6 +142,22 @@ function EmptyState({ hasError }: { hasError: boolean }) {
         <Network size={28} color="var(--color-border)" className="mx-auto mb-3" />
         <p className="text-[12px]" style={{ color: 'var(--color-text-faint)' }}>
           {hasError ? 'Fix the query on the left to see the diagram.' : 'Paste a SELECT query to visualize it.'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SchemaPlaceholder() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="text-center max-w-xs px-6">
+        <Database size={28} color="var(--color-border)" className="mx-auto mb-3" />
+        <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--color-text-dim)' }}>
+          Schema Explorer
+        </p>
+        <p className="text-[11px]" style={{ color: 'var(--color-text-faint)' }}>
+          Paste a CREATE TABLE script to visualize your schema. Coming in the next update.
         </p>
       </div>
     </div>
