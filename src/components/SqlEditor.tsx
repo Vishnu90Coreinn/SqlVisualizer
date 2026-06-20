@@ -22,37 +22,38 @@ const BASIC_SETUP = {
   indentOnInput: true,
 } as const;
 
+// CSS variables don't resolve inside CodeMirror's injected StyleModule, so hex values are used directly.
 const baseTheme = EditorView.theme(
   {
-    '&': { height: '100%', background: 'var(--color-bg-raised)' },
+    '&': { height: '100%', background: '#0f1420' },
     '.cm-scroller': {
-      fontFamily: 'var(--font-mono)',
+      fontFamily: "'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace",
       fontSize: '12px',
       lineHeight: '20px',
       overflow: 'auto',
     },
-    '.cm-content': { padding: '12px 12px 12px 0', caretColor: 'var(--color-amber)' },
+    '.cm-content': { padding: '12px 12px 12px 0', caretColor: '#f0a93f' },
     '.cm-line': { padding: '0 12px' },
-    '.cm-cursor': { borderLeftColor: 'var(--color-amber)' },
+    '.cm-cursor': { borderLeftColor: '#f0a93f' },
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
       background: 'rgba(240,169,63,0.2) !important',
     },
     '.cm-activeLine': { background: 'rgba(255,255,255,0.025)' },
     '.cm-gutters': {
-      background: 'var(--color-surface)',
-      borderRight: '1px solid var(--color-border)',
-      color: 'var(--color-text-faint)',
+      background: '#141a28',
+      borderRight: '1px solid #28324a',
+      color: '#5a6480',
       minWidth: '36px',
     },
     '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px' },
     '.cm-activeLineGutter': {
-      background: 'var(--color-surface-2)',
-      color: 'var(--color-text-dim)',
+      background: '#1b2333',
+      color: '#8b95ad',
     },
     '.cm-error-line': { background: 'rgba(240,112,140,0.12)' },
     '.cm-matchingBracket': {
       background: 'rgba(240,169,63,0.2)',
-      color: 'var(--color-amber) !important',
+      color: '#f0a93f !important',
       outline: 'none',
     },
   },
@@ -98,6 +99,7 @@ export default function SqlEditor({
       value={value}
       onChange={(v) => onChange(v)}
       extensions={extensions}
+      theme="dark"
       height="100%"
       placeholder="Paste a SQL query here..."
       basicSetup={BASIC_SETUP}
@@ -105,7 +107,7 @@ export default function SqlEditor({
         height: '100%',
         overflow: 'hidden',
         borderRadius: '8px',
-        border: '1px solid var(--color-border)',
+        border: '1px solid #28324a',
       }}
     />
   );

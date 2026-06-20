@@ -114,19 +114,25 @@ export default function App() {
         <div className="flex-1" />
         <div className="flex items-center gap-2">
           <ModeToggle mode={mode} onChange={setMode} />
-          {mode === 'query' && result.flow && <ViewToggle view={view} onChange={setView} />}
+          {mode === 'query' && result.flow && (
+            <>
+              <div className="w-px h-5 shrink-0" style={{ background: 'var(--color-border)' }} />
+              <ViewToggle view={view} onChange={setView} />
+            </>
+          )}
+          <div className="w-px h-5 shrink-0" style={{ background: 'var(--color-border)' }} />
           <button
             onClick={() => canvasRef.current?.exportPng()}
             title="Export PNG (Ctrl+Shift+E)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
+            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
             style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
           >
             <Download size={13} strokeWidth={2.25} />
           </button>
           <button
             onClick={() => copyShareLink().catch(() => {})}
-            title="Copy link (Ctrl+Shift+C)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
+            title="Copy share link (Ctrl+Shift+C)"
+            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
             style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
           >
             <Link size={13} strokeWidth={2.25} />
