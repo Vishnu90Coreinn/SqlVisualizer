@@ -61,3 +61,14 @@ export const SCHEMA_NODE_ROLE_COLOR: Record<SchemaNodeRole, string> = {
 };
 
 export const FK_EDGE_COLOR = '#4fd6e0';
+
+export const JOIN_TYPE_COLOR: Record<string, string> = {
+  'INNER JOIN': '#4fd6e0',
+  'LEFT JOIN': '#5b8ef0',
+  'LEFT OUTER JOIN': '#5b8ef0',
+  'RIGHT JOIN': '#b08af0',
+  'RIGHT OUTER JOIN': '#b08af0',
+  'FULL JOIN': '#f0a93f',
+  'FULL OUTER JOIN': '#f0a93f',
+  'CROSS JOIN': '#f0708c',
+};

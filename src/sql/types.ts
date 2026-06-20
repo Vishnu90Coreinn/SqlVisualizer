@@ -64,6 +64,7 @@ export interface FlowNode {
   /** pipeline lane this node belongs to: 'main' or a CTE name */
   lane: string;
   order: number;
+  warnings?: string[];
 }
 
 export interface FlowEdge {

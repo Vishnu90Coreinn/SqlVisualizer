@@ -7,7 +7,7 @@ import '@xyflow/react/dist/style.css';
 import type { ParseResult } from '../sql/types';
 import { layoutRelationshipGraph } from '../layout/dagreLayout';
 import { layoutFlowGraph } from '../layout/flowLayout';
-import { EDGE_COLOR, STAGE_COLOR, KIND_COLOR, SCHEMA_NODE_ROLE_COLOR, FK_EDGE_COLOR } from '../lib/theme';
+import { EDGE_COLOR, STAGE_COLOR, KIND_COLOR, SCHEMA_NODE_ROLE_COLOR, FK_EDGE_COLOR, JOIN_TYPE_COLOR } from '../lib/theme';
 import RelationNode from './nodes/RelationNode';
 import StageNode from './nodes/StageNode';
 import LaneLabelNode from './nodes/LaneLabelNode';
@@ -118,7 +118,9 @@ function buildGraph(result: ParseResult, view: ViewMode): { nodes: Node[]; edges
       id: n.id,
       type: 'stage',
       position: positions.get(n.id) ?? { x: 0, y: 0 },
-      data: n as any,
+      data: n.kind === 'join'
+        ? { ...n, joinColor: JOIN_TYPE_COLOR[n.title.toUpperCase()] ?? STAGE_COLOR.join }
+        : (n as any),
       draggable: true,
     }));
 
