@@ -48,7 +48,7 @@ export default function App() {
         >
           <Toolbar database={database} onDatabaseChange={setDatabase} onPickSample={setSql} />
           <div className="flex-1 min-h-[160px]">
-            <SqlEditor value={sql} onChange={setSql} errorLine={result.errorPosition?.line} />
+            <SqlEditor value={sql} onChange={setSql} errorLine={result.errorPosition?.line} dialect={database} />
           </div>
           {!result.ok && result.error && (
             <div
