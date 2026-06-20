@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
-import { sql, PostgreSQL, MySQL, SQLite, MSSQL, StandardSQL } from '@codemirror/lang-sql';
+import { sql, PostgreSQL, MySQL, SQLite, MSSQL, StandardSQL, type SQLDialect } from '@codemirror/lang-sql';
 import { EditorView, Decoration } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
 
-const dialectMap: Record<string, any> = {
+const dialectMap: Record<string, SQLDialect | undefined> = {
   PostgreSQL,
   MySQL,
   Sqlite: SQLite,
@@ -12,6 +12,15 @@ const dialectMap: Record<string, any> = {
   BigQuery: StandardSQL,
   Snowflake: StandardSQL,
 };
+
+const BASIC_SETUP = {
+  lineNumbers: true,
+  highlightActiveLine: true,
+  bracketMatching: true,
+  autocompletion: false,
+  foldGutter: false,
+  indentOnInput: true,
+} as const;
 
 const baseTheme = EditorView.theme(
   {
@@ -50,6 +59,8 @@ const baseTheme = EditorView.theme(
   { dark: true }
 );
 
+// Decoration is tied to the extension instance (compute with empty deps), not live document
+// positions. Parent re-derives errorLine on every parse so the 350ms debounce bounds the drift.
 function errorLineExt(errorLine: number | undefined): Extension {
   if (!errorLine) return [];
   return EditorView.decorations.compute([], (state) => {
@@ -89,14 +100,7 @@ export default function SqlEditor({
       extensions={extensions}
       height="100%"
       placeholder="Paste a SQL query here..."
-      basicSetup={{
-        lineNumbers: true,
-        highlightActiveLine: true,
-        bracketMatching: true,
-        autocompletion: false,
-        foldGutter: false,
-        indentOnInput: true,
-      }}
+      basicSetup={BASIC_SETUP}
       style={{
         height: '100%',
         overflow: 'hidden',
