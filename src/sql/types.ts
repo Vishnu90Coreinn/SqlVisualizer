@@ -87,4 +87,42 @@ export interface ParseResult {
   errorPosition?: { line: number; column: number };
   relationship?: RelationshipGraph;
   flow?: FlowGraph;
+  schema?: SchemaGraph;
+}
+
+// ── Schema (DDL / ER) graph ──────────────────────────────────────────────────
+
+export type SchemaNodeRole = 'standalone' | 'parent' | 'junction';
+
+export interface SchemaColumn {
+  name: string;
+  dataType: string;
+  isPrimaryKey: boolean;
+  isForeignKey: boolean;
+  isNotNull: boolean;
+  isUnique: boolean;
+  isIndexed: boolean;
+  references?: { table: string; column: string };
+}
+
+export interface SchemaNode {
+  id: string;
+  tableName: string;
+  columns: SchemaColumn[];
+  compositePK?: string[];
+  role: SchemaNodeRole;
+}
+
+export interface SchemaEdge {
+  id: string;
+  source: string;
+  target: string;
+  sourceColumn: string;
+  targetColumn: string;
+  label: string;
+}
+
+export interface SchemaGraph {
+  nodes: SchemaNode[];
+  edges: SchemaEdge[];
 }

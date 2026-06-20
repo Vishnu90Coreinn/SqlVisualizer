@@ -1,4 +1,4 @@
-import type { RelKind, RelEdgeKind, ColumnRole, FlowStageKind } from '../sql/types';
+import type { RelKind, RelEdgeKind, ColumnRole, FlowStageKind, SchemaNodeRole } from '../sql/types';
 
 export const KIND_COLOR: Record<RelKind, string> = {
   table: '#4fd6e0',
@@ -53,3 +53,11 @@ export const STAGE_COLOR: Record<FlowStageKind, string> = {
   limit: '#7c879f',
   union: '#f0a93f',
 };
+
+export const SCHEMA_NODE_ROLE_COLOR: Record<SchemaNodeRole, string> = {
+  standalone: '#4fd6e0',
+  parent: '#f0a93f',
+  junction: '#b08af0',
+};
+
+export const FK_EDGE_COLOR = '#4fd6e0';
