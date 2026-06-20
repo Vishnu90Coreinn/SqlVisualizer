@@ -8,15 +8,11 @@ import Legend from './components/Legend';
 import { parseSql } from './sql/parser';
 import { SAMPLE_QUERIES } from './lib/sampleQueries';
 import type { ParseResult } from './sql/types';
-import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
-
-export { copyShareLink };
+import { encodeUrlState, decodeUrlState } from './lib/urlState';
 
 export default function App() {
-  const initialUrl = decodeUrlState();
-
-  const [sql, setSql] = useState(initialUrl.sql ?? SAMPLE_QUERIES[1].sql);
-  const [database, setDatabase] = useState(initialUrl.dialect ?? 'PostgreSQL');
+  const [sql, setSql] = useState(() => decodeUrlState().sql ?? SAMPLE_QUERIES[1].sql);
+  const [database, setDatabase] = useState(() => decodeUrlState().dialect ?? 'PostgreSQL');
   const [view, setView] = useState<ViewMode>('relationship');
   const [result, setResult] = useState<ParseResult>({ ok: false });
 
@@ -28,6 +24,7 @@ export default function App() {
   }, [sql, database]);
 
   useEffect(() => {
+    // TODO(A5): replace 'query' with actual mode state once ModeToggle is added
     encodeUrlState({ mode: 'query', dialect: database, sql });
   }, [database, sql]);
 

@@ -38,6 +38,6 @@ export function decodeUrlState(): Partial<AppUrlState> {
   return out;
 }
 
-export function copyShareLink(): void {
-  navigator.clipboard.writeText(window.location.href);
+export function copyShareLink(): Promise<void> {
+  return navigator.clipboard.writeText(window.location.href);
 }
