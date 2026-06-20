@@ -8,10 +8,15 @@ import Legend from './components/Legend';
 import { parseSql } from './sql/parser';
 import { SAMPLE_QUERIES } from './lib/sampleQueries';
 import type { ParseResult } from './sql/types';
+import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
+
+export { copyShareLink };
 
 export default function App() {
-  const [sql, setSql] = useState(SAMPLE_QUERIES[1].sql);
-  const [database, setDatabase] = useState('PostgreSQL');
+  const initialUrl = decodeUrlState();
+
+  const [sql, setSql] = useState(initialUrl.sql ?? SAMPLE_QUERIES[1].sql);
+  const [database, setDatabase] = useState(initialUrl.dialect ?? 'PostgreSQL');
   const [view, setView] = useState<ViewMode>('relationship');
   const [result, setResult] = useState<ParseResult>({ ok: false });
 
@@ -21,6 +26,10 @@ export default function App() {
     }, 350);
     return () => clearTimeout(handle);
   }, [sql, database]);
+
+  useEffect(() => {
+    encodeUrlState({ mode: 'query', dialect: database, sql });
+  }, [database, sql]);
 
   const showCanvas = result.ok;
 
