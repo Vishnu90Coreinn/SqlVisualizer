@@ -6,8 +6,9 @@ const SCHEMA_HEADER_HEIGHT = 40;
 const SCHEMA_ROW_HEIGHT = 22;
 const SCHEMA_FOOTER_PAD = 16;
 
-export function schemaNodeHeight(columnCount: number): number {
-  return SCHEMA_HEADER_HEIGHT + Math.max(columnCount, 1) * SCHEMA_ROW_HEIGHT + SCHEMA_FOOTER_PAD;
+export function schemaNodeHeight(columnCount: number, hasCompositePK = false): number {
+  const footerExtra = hasCompositePK ? 32 : 0;
+  return SCHEMA_HEADER_HEIGHT + Math.max(columnCount, 1) * SCHEMA_ROW_HEIGHT + SCHEMA_FOOTER_PAD + footerExtra;
 }
 
 export function layoutSchemaGraph(graph: SchemaGraph) {
@@ -18,7 +19,7 @@ export function layoutSchemaGraph(graph: SchemaGraph) {
   for (const node of graph.nodes) {
     g.setNode(node.id, {
       width: SCHEMA_NODE_WIDTH,
-      height: schemaNodeHeight(node.columns.length),
+      height: schemaNodeHeight(node.columns.length, node.compositePK != null),
     });
   }
 

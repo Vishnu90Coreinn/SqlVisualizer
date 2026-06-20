@@ -65,9 +65,12 @@ export default function App() {
       if (!mod) return;
       if (e.key === 'Enter') {
         e.preventDefault();
-        const parsed = parseMultiStatement(sql, database);
-        setResults(parsed);
-        setSelectedIdx(0);
+        if (mode !== 'schema') {
+          const parsed = parseMultiStatement(sql, database);
+          setResults(parsed);
+          setSelectedIdx(0);
+        }
+        // In schema mode, the DDL re-parses automatically via its own debounce effect
       }
       if (e.shiftKey && e.key === 'F') {
         e.preventDefault();
@@ -79,12 +82,12 @@ export default function App() {
       }
       if (e.shiftKey && e.key === 'C') {
         e.preventDefault();
-        copyShareLink();
+        copyShareLink().catch(() => {});
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [sql, database]);
+  }, [sql, database, mode]);
 
   const result = results[selectedIdx] ?? { ok: false };
   const showCanvas = result.ok;
@@ -121,7 +124,7 @@ export default function App() {
             <Download size={13} strokeWidth={2.25} />
           </button>
           <button
-            onClick={() => copyShareLink()}
+            onClick={() => copyShareLink().catch(() => {})}
             title="Copy link (Ctrl+Shift+C)"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
             style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}

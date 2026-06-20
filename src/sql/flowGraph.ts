@@ -51,6 +51,11 @@ function buildPipelineForSelect(
       if (entry.join) {
         const cond = entry.on ? exprToSql(entry.on, database) : '';
         const id = push('join', entry.join, `${entry.join} ${tname}${alias ? ' ' + alias : ''}${cond ? `\nON ${truncate(cond, 50)}` : ''}`);
+        // Warn on cross join right here while we have the correct node id
+        if (!entry.on) {
+          const node = nodes.find((n) => n.id === id);
+          if (node) node.warnings = [...(node.warnings ?? []), 'cross join — no ON condition'];
+        }
         chain.push(id);
         fromJoinRefs.push({ nodeId: id, tableName: tname });
       } else {
@@ -58,15 +63,6 @@ function buildPipelineForSelect(
         chain.push(id);
         fromJoinRefs.push({ nodeId: id, tableName: tname });
       }
-    }
-  }
-
-  // Detect cross joins (JOIN with no ON condition)
-  for (const entry of fromList) {
-    if (entry.join && !entry.on) {
-      const nodeId = chain[chain.length - 1];
-      const node = nodes.find((n) => n.id === nodeId);
-      if (node) node.warnings = [...(node.warnings ?? []), 'cross join — no ON condition'];
     }
   }
 

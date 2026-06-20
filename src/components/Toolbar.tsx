@@ -26,6 +26,7 @@ export default function Toolbar({
   return (
     <div className="flex items-center gap-2">
       <select
+        key={mode}
         defaultValue=""
         onChange={(e) => {
           const q = samples.find((s) => s.label === e.target.value);

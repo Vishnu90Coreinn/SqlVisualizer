@@ -24,9 +24,9 @@ export function buildSchemaGraph(ddl: DDLParseResult): SchemaGraph {
     tableToId.set(table.name.toLowerCase(), id);
 
     const isParent = parentTableKeys.has(table.name.toLowerCase());
-    const hasOutgoingFKs = (fkOutCount.get(table.name.toLowerCase()) ?? 0) > 0;
+    const outboundFKCount = fkOutCount.get(table.name.toLowerCase()) ?? 0;
     const role: SchemaNodeRole =
-      isParent && hasOutgoingFKs ? 'junction' : isParent ? 'parent' : 'standalone';
+      outboundFKCount >= 2 ? 'junction' : isParent ? 'parent' : 'standalone';
 
     nodes.push({
       id,

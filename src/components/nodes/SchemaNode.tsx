@@ -38,7 +38,7 @@ function ColumnRow({ col }: { col: SchemaColumn }) {
 
 export default function SchemaNodeComponent({ data, selected }: NodeProps & { data: SchemaNode }) {
   const color = SCHEMA_NODE_ROLE_COLOR[data.role];
-  const height = schemaNodeHeight(data.columns.length);
+  const height = schemaNodeHeight(data.columns.length, data.compositePK != null);
 
   return (
     <div
