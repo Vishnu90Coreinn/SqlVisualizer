@@ -1,5 +1,8 @@
-import { useMemo } from 'react';
-import { ReactFlow, Background, Controls, MiniMap, BackgroundVariant, MarkerType, type Node, type Edge } from '@xyflow/react';
+import { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
+import {
+  ReactFlow, Background, Controls, MiniMap, BackgroundVariant,
+  MarkerType, type Node, type Edge, type ReactFlowInstance,
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { ParseResult } from '../sql/types';
 import { layoutRelationshipGraph } from '../layout/dagreLayout';
@@ -8,45 +11,67 @@ import { EDGE_COLOR, STAGE_COLOR, KIND_COLOR } from '../lib/theme';
 import RelationNode from './nodes/RelationNode';
 import StageNode from './nodes/StageNode';
 import LaneLabelNode from './nodes/LaneLabelNode';
+import { exportDiagramAsPng } from '../lib/exportPng';
 
 export type ViewMode = 'relationship' | 'flow';
 
 const nodeTypes = { relation: RelationNode, stage: StageNode, laneLabel: LaneLabelNode };
 
-export default function DiagramCanvas({ result, view }: { result: ParseResult; view: ViewMode }) {
-  const { nodes, edges } = useMemo(() => buildGraph(result, view), [result, view]);
-
-  if (nodes.length === 0) {
-    return null;
-  }
-
-  return (
-    <ReactFlow
-      key={view}
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      fitView
-      fitViewOptions={{ padding: 0.18, maxZoom: 1.1 }}
-      minZoom={0.15}
-      maxZoom={2}
-      proOptions={{ hideAttribution: true }}
-      defaultEdgeOptions={{ type: 'smoothstep' }}
-    >
-      <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2436" />
-      <Controls showInteractive={false} />
-      <MiniMap
-        pannable
-        zoomable
-        maskColor="rgba(9,12,18,0.75)"
-        nodeColor={(n: Node) => {
-          const data = n.data as any;
-          return n.type === 'relation' ? KIND_COLOR[data.kind as keyof typeof KIND_COLOR] : STAGE_COLOR[data.kind as keyof typeof STAGE_COLOR] || '#3a4560';
-        }}
-      />
-    </ReactFlow>
-  );
+export interface DiagramCanvasHandle {
+  fitView: () => void;
+  exportPng: () => Promise<void>;
 }
+
+const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode }>(
+  ({ result, view }, ref) => {
+    const { nodes, edges } = useMemo(() => buildGraph(result, view), [result, view]);
+    const rfInstance = useRef<ReactFlowInstance | null>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    useImperativeHandle(ref, () => ({
+      fitView: () => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1 }),
+      exportPng: async () => {
+        if (wrapperRef.current) await exportDiagramAsPng(wrapperRef.current);
+      },
+    }));
+
+    if (nodes.length === 0) return null;
+
+    return (
+      <div ref={wrapperRef} style={{ width: '100%', height: '100%' }}>
+        <ReactFlow
+          key={view}
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          fitViewOptions={{ padding: 0.18, maxZoom: 1.1 }}
+          minZoom={0.15}
+          maxZoom={2}
+          proOptions={{ hideAttribution: true }}
+          defaultEdgeOptions={{ type: 'smoothstep' }}
+          onInit={(instance) => { rfInstance.current = instance; }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2436" />
+          <Controls showInteractive={false} />
+          <MiniMap
+            pannable
+            zoomable
+            maskColor="rgba(9,12,18,0.75)"
+            nodeColor={(n: Node) => {
+              const data = n.data as any;
+              return n.type === 'relation'
+                ? KIND_COLOR[data.kind as keyof typeof KIND_COLOR]
+                : STAGE_COLOR[data.kind as keyof typeof STAGE_COLOR] || '#3a4560';
+            }}
+          />
+        </ReactFlow>
+      </div>
+    );
+  }
+);
+
+export default DiagramCanvas;
 
 function buildGraph(result: ParseResult, view: ViewMode): { nodes: Node[]; edges: Edge[] } {
   if (!result.ok) return { nodes: [], edges: [] };

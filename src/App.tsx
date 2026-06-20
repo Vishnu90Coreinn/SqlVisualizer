@@ -1,20 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Network, AlertTriangle } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Network, AlertTriangle, Download, Link } from 'lucide-react';
 import SqlEditor from './components/SqlEditor';
 import Toolbar from './components/Toolbar';
 import ViewToggle from './components/ViewToggle';
-import DiagramCanvas, { type ViewMode } from './components/DiagramCanvas';
+import DiagramCanvas, { type DiagramCanvasHandle, type ViewMode } from './components/DiagramCanvas';
 import Legend from './components/Legend';
 import { parseSql } from './sql/parser';
 import { SAMPLE_QUERIES } from './lib/sampleQueries';
 import type { ParseResult } from './sql/types';
-import { encodeUrlState, decodeUrlState } from './lib/urlState';
+import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
 
 export default function App() {
   const [sql, setSql] = useState(() => decodeUrlState().sql ?? SAMPLE_QUERIES[1].sql);
   const [database, setDatabase] = useState(() => decodeUrlState().dialect ?? 'PostgreSQL');
   const [view, setView] = useState<ViewMode>('relationship');
   const [result, setResult] = useState<ParseResult>({ ok: false });
+  const canvasRef = useRef<DiagramCanvasHandle>(null);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -44,6 +45,22 @@ export default function App() {
           paste a query, see how it actually runs
         </span>
         <div className="flex-1" />
+        <button
+          onClick={() => canvasRef.current?.exportPng()}
+          title="Export PNG (Ctrl+Shift+E)"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
+          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+        >
+          <Download size={13} strokeWidth={2.25} />
+        </button>
+        <button
+          onClick={() => copyShareLink()}
+          title="Copy share link (Ctrl+Shift+C)"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-semibold border transition-colors"
+          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+        >
+          <Link size={13} strokeWidth={2.25} />
+        </button>
         <ViewToggle view={view} onChange={setView} />
       </header>
 
@@ -70,7 +87,7 @@ export default function App() {
 
         <section className="flex-1 relative min-h-[360px]">
           {showCanvas ? (
-            <DiagramCanvas result={result} view={view} />
+            <DiagramCanvas ref={canvasRef} result={result} view={view} />
           ) : (
             <EmptyState hasError={!result.ok && !!result.error} />
           )}
