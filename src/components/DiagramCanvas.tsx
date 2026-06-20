@@ -7,15 +7,17 @@ import '@xyflow/react/dist/style.css';
 import type { ParseResult } from '../sql/types';
 import { layoutRelationshipGraph } from '../layout/dagreLayout';
 import { layoutFlowGraph } from '../layout/flowLayout';
-import { EDGE_COLOR, STAGE_COLOR, KIND_COLOR } from '../lib/theme';
+import { EDGE_COLOR, STAGE_COLOR, KIND_COLOR, SCHEMA_NODE_ROLE_COLOR, FK_EDGE_COLOR } from '../lib/theme';
 import RelationNode from './nodes/RelationNode';
 import StageNode from './nodes/StageNode';
 import LaneLabelNode from './nodes/LaneLabelNode';
+import SchemaNodeComponent from './nodes/SchemaNode';
 import { exportDiagramAsPng } from '../lib/exportPng';
+import { layoutSchemaGraph } from '../layout/schemaLayout';
 
-export type ViewMode = 'relationship' | 'flow';
+export type ViewMode = 'relationship' | 'flow' | 'schema';
 
-const nodeTypes = { relation: RelationNode, stage: StageNode, laneLabel: LaneLabelNode };
+const nodeTypes = { relation: RelationNode, stage: StageNode, laneLabel: LaneLabelNode, schemaNode: SchemaNodeComponent };
 
 export interface DiagramCanvasHandle {
   fitView: () => void;
@@ -60,6 +62,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
             maskColor="rgba(9,12,18,0.75)"
             nodeColor={(n: Node) => {
               const data = n.data as any;
+              if (n.type === 'schemaNode') return SCHEMA_NODE_ROLE_COLOR[data.role as keyof typeof SCHEMA_NODE_ROLE_COLOR] ?? '#4fd6e0';
               return n.type === 'relation'
                 ? KIND_COLOR[data.kind as keyof typeof KIND_COLOR]
                 : STAGE_COLOR[data.kind as keyof typeof STAGE_COLOR] || '#3a4560';
@@ -147,6 +150,34 @@ function buildGraph(result: ParseResult, view: ViewMode): { nodes: Node[]; edges
     });
 
     return { nodes: [...laneLabelNodes, ...stageNodes], edges };
+  }
+
+  if (view === 'schema' && result.schema) {
+    const graph = result.schema;
+    const { positions } = layoutSchemaGraph(graph);
+
+    const nodes: Node[] = graph.nodes.map((n) => ({
+      id: n.id,
+      type: 'schemaNode',
+      position: positions.get(n.id) ?? { x: 0, y: 0 },
+      data: n as any,
+      draggable: true,
+    }));
+
+    const edges: Edge[] = graph.edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      label: e.label,
+      labelStyle: { fill: FK_EDGE_COLOR, fontSize: 9.5, fontWeight: 700, fontFamily: 'var(--font-mono)' },
+      labelBgStyle: { fill: '#0f1420', fillOpacity: 0.9 },
+      labelBgPadding: [4, 2] as [number, number],
+      style: { stroke: FK_EDGE_COLOR, strokeWidth: 1.75 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: FK_EDGE_COLOR, width: 14, height: 14 },
+      markerStart: { type: MarkerType.Arrow, color: FK_EDGE_COLOR, width: 10, height: 10 },
+    }));
+
+    return { nodes, edges };
   }
 
   return { nodes: [], edges: [] };

@@ -8,8 +8,11 @@ import SampleGrid from './components/SampleGrid';
 import DiagramCanvas, { type DiagramCanvasHandle, type ViewMode } from './components/DiagramCanvas';
 import Legend from './components/Legend';
 import { parseSql } from './sql/parser';
+import { parseDDL } from './sql/ddlParser';
+import { buildSchemaGraph } from './sql/schemaGraph';
 import { SAMPLE_QUERIES } from './lib/sampleQueries';
-import type { ParseResult } from './sql/types';
+import { DDL_SAMPLE_QUERIES } from './lib/ddlSampleQueries';
+import type { ParseResult, SchemaGraph } from './sql/types';
 import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
 
 export default function App() {
@@ -19,6 +22,9 @@ export default function App() {
   const [result, setResult] = useState<ParseResult>({ ok: false });
   const [mode, setMode] = useState<AppMode>(() => decodeUrlState().mode ?? 'query');
   const canvasRef = useRef<DiagramCanvasHandle>(null);
+  const [schemaSql, setSchemaSql] = useState(DDL_SAMPLE_QUERIES[1].sql);
+  const [schemaGraph, setSchemaGraph] = useState<SchemaGraph | null>(null);
+  const [schemaError, setSchemaError] = useState<string | null>(null);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -26,6 +32,24 @@ export default function App() {
     }, 350);
     return () => clearTimeout(handle);
   }, [sql, database]);
+
+  useEffect(() => {
+    if (mode !== 'schema') return;
+    const handle = setTimeout(() => {
+      const ddlResult = parseDDL(schemaSql, database);
+      if (ddlResult.errors.length) {
+        setSchemaError(ddlResult.errors[0]);
+        setSchemaGraph(null);
+      } else if (ddlResult.tables.size === 0) {
+        setSchemaError('No CREATE TABLE statements found.');
+        setSchemaGraph(null);
+      } else {
+        setSchemaError(null);
+        setSchemaGraph(buildSchemaGraph(ddlResult));
+      }
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [schemaSql, database, mode]);
 
   useEffect(() => {
     encodeUrlState({ mode, dialect: database, sql });
@@ -99,11 +123,21 @@ export default function App() {
           className="flex flex-col gap-2.5 p-3 lg:w-[420px] shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px]"
           style={{ borderColor: 'var(--color-border)' }}
         >
-          <Toolbar database={database} onDatabaseChange={setDatabase} onPickSample={setSql} />
+          <Toolbar
+            database={database}
+            mode={mode}
+            onDatabaseChange={setDatabase}
+            onPickSample={mode === 'schema' ? setSchemaSql : setSql}
+          />
           <div className="flex-1 min-h-[160px]">
-            <SqlEditor value={sql} onChange={setSql} errorLine={result.errorPosition?.line} dialect={database} />
+            <SqlEditor
+              value={mode === 'schema' ? schemaSql : sql}
+              onChange={mode === 'schema' ? setSchemaSql : setSql}
+              errorLine={mode === 'schema' ? undefined : result.errorPosition?.line}
+              dialect={database}
+            />
           </div>
-          {!result.ok && result.error && (
+          {mode === 'query' && !result.ok && result.error && (
             <div
               className="flex items-start gap-2 rounded-lg border px-3 py-2 text-[11.5px] fade-up"
               style={{ borderColor: 'var(--color-rose)', background: 'rgba(240,112,140,0.08)', color: 'var(--color-rose)' }}
@@ -112,12 +146,29 @@ export default function App() {
               <span>{result.error}</span>
             </div>
           )}
+          {mode === 'schema' && schemaError && (
+            <div
+              className="flex items-start gap-2 rounded-lg border px-3 py-2 text-[11.5px] fade-up"
+              style={{ borderColor: 'var(--color-rose)', background: 'rgba(240,112,140,0.08)', color: 'var(--color-rose)' }}
+            >
+              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+              <span>{schemaError}</span>
+            </div>
+          )}
           {mode === 'query' && <Legend view={view} />}
         </section>
 
         <section className="flex-1 relative min-h-[360px]">
           {mode === 'schema' ? (
-            <SchemaPlaceholder />
+            schemaGraph ? (
+              <DiagramCanvas
+                ref={canvasRef}
+                result={{ ok: true, schema: schemaGraph }}
+                view="schema"
+              />
+            ) : (
+              <SchemaEmptyState error={schemaError} />
+            )
           ) : sql.trim() === '' ? (
             <SampleGrid
               samples={SAMPLE_QUERIES}
@@ -148,17 +199,18 @@ function EmptyState({ hasError }: { hasError: boolean }) {
   );
 }
 
-function SchemaPlaceholder() {
+function SchemaEmptyState({ error }: { error: string | null }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       <div className="text-center max-w-xs px-6">
         <Database size={28} color="var(--color-border)" className="mx-auto mb-3" />
-        <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--color-text-dim)' }}>
-          Schema Explorer
-        </p>
-        <p className="text-[11px]" style={{ color: 'var(--color-text-faint)' }}>
-          Paste a CREATE TABLE script to visualize your schema. Coming in the next update.
-        </p>
+        {error ? (
+          <p className="text-[11.5px]" style={{ color: 'var(--color-rose)' }}>{error}</p>
+        ) : (
+          <p className="text-[12px]" style={{ color: 'var(--color-text-faint)' }}>
+            Paste a CREATE TABLE script to visualize your schema.
+          </p>
+        )}
       </div>
     </div>
   );
