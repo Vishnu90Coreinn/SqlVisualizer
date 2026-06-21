@@ -14,6 +14,7 @@ import LaneLabelNode from './nodes/LaneLabelNode';
 import SchemaNodeComponent from './nodes/SchemaNode';
 import { exportDiagramAsPng, exportDiagramAsSvg, exportDiagramAsCard } from '../lib/exportPng';
 import DiagramToolbar from './DiagramToolbar';
+import DiagramSearch from './DiagramSearch';
 import { layoutSchemaGraph } from '../layout/schemaLayout';
 import { getCostColor, type ExplainResult } from '../lib/explainParser';
 
@@ -34,6 +35,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
   ({ result, view, onNodeClick, explainResult }, ref) => {
     const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(new Set());
     const [activeColumn, setActiveColumn] = useState<{ nodeId: string; col: string } | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
     const [isAnimating, setIsAnimating] = useState(false);
     const [activeStageId, setActiveStageId] = useState<string | null>(null);
     const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -201,6 +203,17 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       });
     }, [displayEdges, lineageNodeIds, view]);
 
+    // Search: dim nodes that don't match the query
+    const searchNodes = useMemo(() => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return lineageNodes;
+      return lineageNodes.map((n) => {
+        const label = ((n.data as any).label ?? (n.data as any).tableName ?? (n.data as any).title ?? '').toLowerCase();
+        const matches = label.includes(q);
+        return { ...n, style: { ...n.style, opacity: matches ? 1 : 0.2 } };
+      });
+    }, [lineageNodes, searchQuery]);
+
     useImperativeHandle(ref, () => ({
       fitView: () => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1 }),
       exportPng: async () => {
@@ -226,7 +239,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       <div ref={wrapperRef} style={{ width: '100%', height: '100%' }}>
         <ReactFlow
           key={view}
-          nodes={lineageNodes}
+          nodes={searchNodes}
           edges={lineageEdges}
           nodeTypes={nodeTypes}
           nodesDraggable
@@ -260,12 +273,15 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
             }}
           />
         </ReactFlow>
-        <DiagramToolbar
-          onZoomIn={() => rfInstance.current?.zoomIn({ duration: 200 })}
-          onZoomOut={() => rfInstance.current?.zoomOut({ duration: 200 })}
-          onFitView={() => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1, duration: 300 })}
-          onExport={async () => { if (wrapperRef.current) await exportDiagramAsPng(wrapperRef.current); }}
-        />
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+          <DiagramSearch onSearch={setSearchQuery} />
+          <DiagramToolbar
+            onZoomIn={() => rfInstance.current?.zoomIn({ duration: 200 })}
+            onZoomOut={() => rfInstance.current?.zoomOut({ duration: 200 })}
+            onFitView={() => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1, duration: 300 })}
+            onExport={async () => { if (wrapperRef.current) await exportDiagramAsPng(wrapperRef.current); }}
+          />
+        </div>
       </div>
     );
   }
