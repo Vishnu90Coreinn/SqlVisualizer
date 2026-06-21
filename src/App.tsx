@@ -38,6 +38,7 @@ import SchemaDiffPanel from './components/SchemaDiffPanel';
 import type { SchemaDiffResult } from './lib/schemaDiff';
 import ExplainImportModal from './components/ExplainImportModal';
 import type { ExplainResult } from './lib/explainParser';
+import QueryDiffPanel from './components/QueryDiffPanel';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -66,6 +67,9 @@ export default function App() {
   const [showExplain, setShowExplain] = useState(false);
   const [diffMode, setDiffMode] = useState(false);
   const [diffResult, setDiffResult] = useState<SchemaDiffResult | null>(null);
+  const [queryDiffMode, setQueryDiffMode] = useState(false);
+  const [diffBefore, setDiffBefore] = useState<ParseResult | null>(null);
+  const [diffAfter, setDiffAfter] = useState<ParseResult | null>(null);
   const [panelData, setPanelData] = useState<
     | { type: 'relation'; node: RelNode }
     | { type: 'schema'; node: SchemaNode }
@@ -370,10 +374,27 @@ export default function App() {
                     Format
                   </button>
                   <QueryHistoryDropdown onSelect={setSql} />
+                  <button
+                    onClick={() => { setQueryDiffMode((v) => !v); setDiffBefore(null); setDiffAfter(null); }}
+                    title="Compare two queries side by side"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors"
+                    style={{
+                      borderColor: queryDiffMode ? '#f0a93f' : 'var(--color-border)',
+                      color: queryDiffMode ? '#f0a93f' : 'var(--color-text-dim)',
+                      background: queryDiffMode ? 'rgba(240,169,63,0.1)' : 'var(--color-bg-raised)',
+                    }}
+                  >
+                    {queryDiffMode ? '◀ Exit Diff' : '⇄ Diff'}
+                  </button>
                 </>
               )}
             </div>
-            {mode === 'schema' && diffMode ? (
+            {mode === 'query' && queryDiffMode ? (
+              <QueryDiffPanel
+                database={database}
+                onResults={(b, a) => { setDiffBefore(b); setDiffAfter(a); }}
+              />
+            ) : mode === 'schema' && diffMode ? (
               <SchemaDiffPanel database={database} onDiffResult={setDiffResult} />
             ) : (
               <SqlEditor
@@ -456,7 +477,24 @@ export default function App() {
             />
           )}
           <div className="flex-1 relative">
-            {mode === 'query' && showCanvas && (
+            {mode === 'query' && queryDiffMode ? (
+              /* Query diff — two diagrams side by side */
+              <div className="absolute inset-0 flex">
+                <div className="flex-1 relative border-r" style={{ borderColor: 'var(--color-border)' }}>
+                  <div className="absolute top-2 left-2 z-10 text-[9px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(240,112,140,0.15)', color: '#f0708c' }}>BEFORE</div>
+                  {diffBefore?.ok
+                    ? <DiagramCanvas result={diffBefore} view={view} />
+                    : <div className="absolute inset-0 flex items-center justify-center text-[11px]" style={{ color: 'var(--color-text-faint)' }}>Paste "before" query and click Compare</div>}
+                </div>
+                <div className="flex-1 relative">
+                  <div className="absolute top-2 left-2 z-10 text-[9px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(95,216,150,0.15)', color: '#5fd896' }}>AFTER</div>
+                  {diffAfter?.ok
+                    ? <DiagramCanvas result={diffAfter} view={view} />
+                    : <div className="absolute inset-0 flex items-center justify-center text-[11px]" style={{ color: 'var(--color-text-faint)' }}>Paste "after" query and click Compare</div>}
+                </div>
+              </div>
+            ) : null}
+            {!queryDiffMode && mode === 'query' && showCanvas && (
               <ComplexityBadge result={result} />
             )}
             {mode === 'schema' && diffMode ? (
@@ -472,7 +510,8 @@ export default function App() {
               ) : (
                 <SchemaEmptyState error={schemaError} />
               )
-            ) : sql.trim() === '' ? (
+            ) : mode === 'query' && queryDiffMode ? null
+            : sql.trim() === '' ? (
               <SampleGrid
                 samples={SAMPLE_QUERIES}
                 prompt="Paste a SELECT query — or pick a sample to get started:"
