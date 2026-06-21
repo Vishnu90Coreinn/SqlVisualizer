@@ -14,6 +14,7 @@ import LaneLabelNode from './nodes/LaneLabelNode';
 import SchemaNodeComponent from './nodes/SchemaNode';
 import { exportDiagramAsPng, exportDiagramAsSvg } from '../lib/exportPng';
 import { layoutSchemaGraph } from '../layout/schemaLayout';
+import { getCostColor, type ExplainResult } from '../lib/explainParser';
 
 export type ViewMode = 'relationship' | 'flow' | 'schema';
 
@@ -27,8 +28,8 @@ export interface DiagramCanvasHandle {
   stopAnimation: () => void;
 }
 
-const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode; onNodeClick?: (nodeId: string, nodeData: any) => void }>(
-  ({ result, view, onNodeClick }, ref) => {
+const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode; onNodeClick?: (nodeId: string, nodeData: any) => void; explainResult?: ExplainResult | null }>(
+  ({ result, view, onNodeClick, explainResult }, ref) => {
     const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(new Set());
     const [isAnimating, setIsAnimating] = useState(false);
     const [activeStageId, setActiveStageId] = useState<string | null>(null);
@@ -104,6 +105,46 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       return edges.map((e) => ({ ...e, animated: true }));
     }, [edges, isAnimating, view]);
 
+    // Apply EXPLAIN cost overlay on flow stage nodes
+    const explainNodes = useMemo(() => {
+      if (!explainResult || view !== 'flow') return displayNodes;
+      return displayNodes.map((n) => {
+        if (n.type !== 'stage') return n;
+        const stageData = n.data as any;
+
+        // Try to match by relation name (for FROM/JOIN nodes) or node type
+        const match = explainResult.nodes.find((en) => {
+          if (!en.relation) return false;
+          return stageData.snippet?.toLowerCase().includes(en.relation.toLowerCase());
+        }) ?? explainResult.nodes.find((en) => {
+          const nt = en.nodeType.toLowerCase();
+          const kind = stageData.kind;
+          return (
+            (kind === 'from' && (nt.includes('scan') || nt.includes('seq'))) ||
+            (kind === 'join' && nt.includes('join')) ||
+            (kind === 'groupby' && nt.includes('group')) ||
+            (kind === 'orderby' && nt.includes('sort'))
+          );
+        });
+
+        if (!match) return n;
+
+        const cost = match.cost ?? match.actualTime ?? 0;
+        const costColor = getCostColor(cost, explainResult.maxCost);
+        const rows = match.actualRows ?? match.rows;
+
+        return {
+          ...n,
+          data: {
+            ...stageData,
+            explainCost: cost.toFixed(2),
+            explainRows: rows,
+            explainColor: costColor,
+          },
+        };
+      });
+    }, [displayNodes, explainResult, view]);
+
     useImperativeHandle(ref, () => ({
       fitView: () => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1 }),
       exportPng: async () => {
@@ -126,7 +167,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       <div ref={wrapperRef} style={{ width: '100%', height: '100%' }}>
         <ReactFlow
           key={view}
-          nodes={displayNodes}
+          nodes={explainNodes}
           edges={displayEdges}
           nodeTypes={nodeTypes}
           fitView

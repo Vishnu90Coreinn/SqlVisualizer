@@ -31,6 +31,8 @@ import QueryHistoryDropdown from './components/QueryHistoryDropdown';
 import { saveWorkspace, loadWorkspace } from './lib/workspaceStorage';
 import SchemaDiffPanel from './components/SchemaDiffPanel';
 import type { SchemaDiffResult } from './lib/schemaDiff';
+import ExplainImportModal from './components/ExplainImportModal';
+import type { ExplainResult } from './lib/explainParser';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -51,6 +53,8 @@ export default function App() {
   const [schemaGraph, setSchemaGraph] = useState<SchemaGraph | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
+  const [explainResult, setExplainResult] = useState<ExplainResult | null>(null);
+  const [showExplain, setShowExplain] = useState(false);
   const [diffMode, setDiffMode] = useState(false);
   const [diffResult, setDiffResult] = useState<SchemaDiffResult | null>(null);
   const [panelData, setPanelData] = useState<
@@ -97,6 +101,10 @@ export default function App() {
   useEffect(() => {
     encodeUrlState({ mode, dialect: database, sql });
   }, [mode, database, sql]);
+
+  useEffect(() => {
+    setExplainResult(null);
+  }, [sql, database]);
 
   function handleThemeToggle() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
@@ -239,6 +247,18 @@ export default function App() {
                 }}
               >
                 {isAnimating ? '⏹ Stop' : '▶ Play'}
+              </button>
+              <button
+                onClick={() => setShowExplain(true)}
+                title="Import EXPLAIN output to overlay costs"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-md text-[10.5px] font-semibold border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                style={{
+                  borderColor: explainResult ? '#5fd896' : 'var(--color-border)',
+                  color: explainResult ? '#5fd896' : 'var(--color-text-dim)',
+                  background: 'var(--color-bg-raised)',
+                }}
+              >
+                {explainResult ? '✓ EXPLAIN' : 'EXPLAIN'}
               </button>
             </>
           )}
@@ -414,7 +434,7 @@ export default function App() {
                 onSelect={setSql}
               />
             ) : showCanvas ? (
-              <DiagramCanvas ref={canvasRef} result={result} view={view} onNodeClick={handleNodeClick} />
+              <DiagramCanvas ref={canvasRef} result={result} view={view} onNodeClick={handleNodeClick} explainResult={explainResult} />
             ) : (
               <EmptyState hasError={!result.ok && !!result.error} />
             )}
@@ -425,6 +445,12 @@ export default function App() {
         </section>
       </main>
       {showEmbed && <EmbedModal onClose={() => setShowEmbed(false)} />}
+      {showExplain && (
+        <ExplainImportModal
+          onImport={(r) => setExplainResult(r)}
+          onClose={() => setShowExplain(false)}
+        />
+      )}
     </div>
   );
 }
