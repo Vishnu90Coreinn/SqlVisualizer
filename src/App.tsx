@@ -360,7 +360,7 @@ export default function App() {
 
       <main className="flex-1 flex flex-col lg:flex-row min-h-0">
         <section
-          className="flex flex-col gap-2.5 p-3 shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px]"
+          className="flex flex-col gap-2 p-3 shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px]"
           style={{ borderColor: 'var(--color-border)', width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? panelWidth : undefined }}
         >
           <Toolbar
@@ -416,8 +416,13 @@ export default function App() {
             </div>
           )}
           <div className="flex-1 flex flex-col min-h-[160px] gap-1" data-beacon="editor">
-            {/* Editor micro-toolbar */}
-            <div className="flex items-center justify-end gap-1 shrink-0">
+            {/* Editor section header */}
+            <div className="flex items-center justify-between shrink-0">
+              <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: 'var(--color-text-faint)' }}>
+                {mode === 'schema' ? 'DDL Script' : 'SQL Query'}
+              </span>
+              {/* Editor micro-toolbar */}
+              <div className="flex items-center gap-1">
               {mode === 'query' && (
                 <>
                   <button
@@ -453,7 +458,8 @@ export default function App() {
                   </button>
                 </>
               )}
-            </div>
+              </div>{/* end micro-toolbar */}
+            </div>{/* end section header */}
             {mode === 'query' && queryDiffMode ? (
               <QueryDiffPanel
                 database={database}
