@@ -15,11 +15,13 @@ export default function Toolbar({
   mode,
   onDatabaseChange,
   onPickSample,
+  onFormat,
 }: {
   database: string;
   mode: AppMode;
   onDatabaseChange: (db: string) => void;
   onPickSample: (sql: string) => void;
+  onFormat: () => void;
 }) {
   const samples = mode === 'schema' ? DDL_SAMPLE_QUERIES : SAMPLE_QUERIES;
 
@@ -58,6 +60,16 @@ export default function Toolbar({
           </option>
         ))}
       </select>
+
+      <button
+        onClick={onFormat}
+        title="Format SQL (Alt+Shift+F)"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+      >
+        <span className="font-mono">{ }</span>
+        Format
+      </button>
     </div>
   );
 }
