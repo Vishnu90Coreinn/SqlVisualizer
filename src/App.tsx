@@ -20,6 +20,8 @@ import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
 import { formatSql } from './lib/sqlFormatter';
 import ComplexityBadge from './components/ComplexityBadge';
 import { explainError } from './lib/errorExplanations';
+import { addToHistory } from './lib/queryHistory';
+import QueryHistoryDropdown from './components/QueryHistoryDropdown';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -129,6 +131,12 @@ export default function App() {
     }
   }, [result]);
 
+  useEffect(() => {
+    if (mode === 'query' && result.ok && sql.trim().length >= 10) {
+      addToHistory(sql, database);
+    }
+  }, [result]);
+
   return (
     <div className="h-screen flex flex-col">
       <header
@@ -184,6 +192,11 @@ export default function App() {
             onPickSample={mode === 'schema' ? setSchemaSql : setSql}
             onFormat={handleFormat}
           />
+          {mode === 'query' && (
+            <div className="flex justify-end">
+              <QueryHistoryDropdown onSelect={setSql} />
+            </div>
+          )}
           <div className="flex-1 min-h-[160px]">
             <SqlEditor
               value={mode === 'schema' ? schemaSql : sql}
