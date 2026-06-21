@@ -39,6 +39,7 @@ import type { SchemaDiffResult } from './lib/schemaDiff';
 import ExplainImportModal from './components/ExplainImportModal';
 import type { ExplainResult } from './lib/explainParser';
 import QueryDiffPanel from './components/QueryDiffPanel';
+import CommandPalette, { buildCommands } from './components/CommandPalette';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -70,6 +71,7 @@ export default function App() {
   const [queryDiffMode, setQueryDiffMode] = useState(false);
   const [diffBefore, setDiffBefore] = useState<ParseResult | null>(null);
   const [diffAfter, setDiffAfter] = useState<ParseResult | null>(null);
+  const [showPalette, setShowPalette] = useState(false);
   const [panelData, setPanelData] = useState<
     | { type: 'relation'; node: RelNode }
     | { type: 'schema'; node: SchemaNode }
@@ -135,6 +137,11 @@ export default function App() {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key === 'k') {
+        e.preventDefault();
+        setShowPalette((v) => !v);
+        return;
+      }
       if (e.altKey && e.shiftKey && e.key === 'F') {
         e.preventDefault();
         const currentSql = mode === 'schema' ? schemaSql : sql;
@@ -226,9 +233,17 @@ export default function App() {
         <h1 className="text-[13px] font-bold tracking-wide" style={{ color: 'var(--color-text)' }}>
           SQL<span style={{ color: 'var(--color-amber)' }}>//</span>VISUALIZER
         </h1>
-        <span className="text-[10.5px] hidden sm:inline" style={{ color: 'var(--color-text-faint)' }}>
+        <button
+          onClick={() => setShowPalette(true)}
+          className="hidden sm:flex items-center gap-1.5 text-[10.5px] transition-colors hover:text-[#f0a93f]"
+          style={{ color: 'var(--color-text-faint)' }}
+          title="Open command palette (Ctrl+K)"
+        >
           paste a query, see how it actually runs
-        </span>
+          <kbd className="text-[8.5px] px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-raised)', color: 'var(--color-text-faint)' }}>
+            ⌘K
+          </kbd>
+        </button>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
           <ModeToggle mode={mode} onChange={setMode} />
@@ -530,6 +545,24 @@ export default function App() {
       </main>
       {showEmbed && <EmbedModal onClose={() => setShowEmbed(false)} />}
       {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
+      {showPalette && (
+        <CommandPalette
+          onClose={() => setShowPalette(false)}
+          commands={buildCommands({
+            setMode,
+            setView: (v) => setView(v as ViewMode),
+            setSql,
+            setSchemaSql,
+            handleFormat,
+            fitView: () => canvasRef.current?.fitView(),
+            exportPng: () => canvasRef.current?.exportPng(),
+            exportCard: () => canvasRef.current?.exportCard(mode === 'schema' ? schemaSql : sql, mode),
+            copyShareLink: () => copyShareLink().catch(() => {}),
+            setShowHelp,
+            setShowTemplates,
+          })}
+        />
+      )}
       {showTemplates && (
         <SchemaTemplatesModal
           onSelect={(sql) => { setSchemaSql(sql); setDiffMode(false); }}
