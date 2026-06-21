@@ -56,6 +56,8 @@ export default function App() {
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [panelWidth, setPanelWidth] = useState(420);
+  const isDragging = useRef(false);
   const [explainResult, setExplainResult] = useState<ExplainResult | null>(null);
   const [showExplain, setShowExplain] = useState(false);
   const [diffMode, setDiffMode] = useState(false);
@@ -302,8 +304,8 @@ export default function App() {
 
       <main className="flex-1 flex flex-col lg:flex-row min-h-0">
         <section
-          className="flex flex-col gap-2.5 p-3 lg:w-[420px] shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px]"
-          style={{ borderColor: 'var(--color-border)' }}
+          className="flex flex-col gap-2.5 p-3 shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px]"
+          style={{ borderColor: 'var(--color-border)', width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? panelWidth : undefined }}
         >
           <Toolbar
             database={database}
@@ -401,6 +403,35 @@ export default function App() {
           )}
           {mode === 'query' && <Legend view={view} />}
         </section>
+
+        {/* Drag handle — desktop only */}
+        <div
+          className="hidden lg:flex items-center justify-center w-1.5 shrink-0 cursor-col-resize group"
+          style={{ background: 'transparent' }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            isDragging.current = true;
+            const startX = e.clientX;
+            const startW = panelWidth;
+            function onMove(ev: MouseEvent) {
+              if (!isDragging.current) return;
+              const next = Math.min(640, Math.max(280, startW + ev.clientX - startX));
+              setPanelWidth(next);
+            }
+            function onUp() {
+              isDragging.current = false;
+              window.removeEventListener('mousemove', onMove);
+              window.removeEventListener('mouseup', onUp);
+            }
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+          }}
+        >
+          <div
+            className="w-0.5 h-12 rounded-full transition-colors group-hover:bg-[#f0a93f]"
+            style={{ background: 'var(--color-border)' }}
+          />
+        </div>
 
         <section className="flex-1 flex flex-col min-h-[360px]">
           {mode === 'query' && results.length > 1 && (
