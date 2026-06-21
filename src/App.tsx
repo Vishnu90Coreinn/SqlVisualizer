@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
-import { Network, AlertTriangle, Link, Database } from 'lucide-react';
+import { Network, AlertTriangle, Link, Database, Code2 } from 'lucide-react';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
+import EmbedModal from './components/EmbedModal';
 import { getStoredTheme, applyTheme, type Theme } from './lib/themeStorage';
 import Toolbar from './components/Toolbar';
 import ViewToggle from './components/ViewToggle';
@@ -40,6 +41,7 @@ export default function App() {
   const [schemaSql, setSchemaSql] = useState(DDL_SAMPLE_QUERIES[1].sql);
   const [schemaGraph, setSchemaGraph] = useState<SchemaGraph | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
+  const [showEmbed, setShowEmbed] = useState(false);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -173,6 +175,14 @@ export default function App() {
           >
             <Link size={13} strokeWidth={2.25} />
           </button>
+          <button
+            onClick={() => setShowEmbed(true)}
+            title="Get embed code"
+            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+          >
+            <Code2 size={13} strokeWidth={2.25} />
+          </button>
           <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
         </div>
       </header>
@@ -270,6 +280,7 @@ export default function App() {
           </div>
         </section>
       </main>
+      {showEmbed && <EmbedModal onClose={() => setShowEmbed(false)} />}
     </div>
   );
 }
