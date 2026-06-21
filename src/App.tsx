@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Network, AlertTriangle, Link, Database } from 'lucide-react';
+import { Network, AlertTriangle, Link, Database, Save, FolderOpen } from 'lucide-react';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
 import { getStoredTheme, applyTheme, type Theme } from './lib/themeStorage';
@@ -23,6 +23,7 @@ import ComplexityBadge from './components/ComplexityBadge';
 import { explainError } from './lib/errorExplanations';
 import { addToHistory } from './lib/queryHistory';
 import QueryHistoryDropdown from './components/QueryHistoryDropdown';
+import { saveWorkspace, loadWorkspace } from './lib/workspaceStorage';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -37,6 +38,7 @@ export default function App() {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [mode, setMode] = useState<AppMode>(() => decodeUrlState().mode ?? 'query');
   const canvasRef = useRef<DiagramCanvasHandle>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [schemaSql, setSchemaSql] = useState(DDL_SAMPLE_QUERIES[1].sql);
   const [schemaGraph, setSchemaGraph] = useState<SchemaGraph | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
@@ -123,6 +125,26 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [sql, schemaSql, database, mode]);
 
+  function handleSave() {
+    saveWorkspace({ mode, dialect: database, sql, schemaSql });
+  }
+
+  async function handleLoad(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const ws = await loadWorkspace(file);
+      setMode(ws.mode as AppMode);
+      setDatabase(ws.dialect);
+      setSql(ws.sql);
+      setSchemaSql(ws.schemaSql);
+    } catch {
+      // silently ignore malformed files
+    } finally {
+      e.target.value = ''; // reset so same file can be re-loaded
+    }
+  }
+
   const result = results[selectedIdx] ?? { ok: false };
   const showCanvas = result.ok;
 
@@ -172,6 +194,30 @@ export default function App() {
             style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
           >
             <Link size={13} strokeWidth={2.25} />
+          </button>
+          {/* Hidden file input for Load */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleLoad}
+          />
+          <button
+            onClick={handleSave}
+            title="Save workspace as JSON"
+            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+          >
+            <Save size={13} strokeWidth={2.25} />
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="Load workspace from JSON"
+            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+          >
+            <FolderOpen size={13} strokeWidth={2.25} />
           </button>
           <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
         </div>
