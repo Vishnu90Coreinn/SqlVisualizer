@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Network, AlertTriangle, Database, FileDown, HelpCircle } from 'lucide-react';
+import { Network, AlertTriangle, Database, FileDown, HelpCircle, LayoutTemplate } from 'lucide-react';
 import HeaderActionsMenu from './components/HeaderActionsMenu';
 import HelpPanel from './components/HelpPanel';
+import SchemaTemplatesModal from './components/SchemaTemplatesModal';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
 import EmbedModal from './components/EmbedModal';
@@ -56,6 +57,7 @@ export default function App() {
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [panelWidth, setPanelWidth] = useState(420);
   const isDragging = useRef(false);
   const [explainResult, setExplainResult] = useState<ExplainResult | null>(null);
@@ -316,6 +318,14 @@ export default function App() {
           {mode === 'schema' && (
             <div className="flex items-center justify-between gap-2">
               <button
+                onClick={() => setShowTemplates(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-semibold transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-faint)', background: 'transparent' }}
+              >
+                <LayoutTemplate size={11} strokeWidth={2} />
+                Templates
+              </button>
+              <button
                 onClick={() => { setDiffMode((v) => !v); setDiffResult(null); }}
                 className="text-[10px] font-semibold px-2 py-1 rounded border transition-colors"
                 style={{
@@ -477,6 +487,12 @@ export default function App() {
       </main>
       {showEmbed && <EmbedModal onClose={() => setShowEmbed(false)} />}
       {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
+      {showTemplates && (
+        <SchemaTemplatesModal
+          onSelect={(sql) => { setSchemaSql(sql); setDiffMode(false); }}
+          onClose={() => setShowTemplates(false)}
+        />
+      )}
       {showExplain && (
         <ExplainImportModal
           onImport={(r) => setExplainResult(r)}
