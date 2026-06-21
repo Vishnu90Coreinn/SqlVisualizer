@@ -31,7 +31,7 @@ export default function StageNode({ data, selected }: NodeProps & { data: FlowNo
         width: FLOW_NODE_WIDTH,
         borderColor: selected ? color : 'var(--color-border)',
         borderStyle: dashed ? 'dashed' : 'solid',
-        borderLeft: `3px solid ${color}`,
+        borderLeft: `3px solid ${(data as any).explainColor ?? color}`,
         borderLeftStyle: 'solid',
       }}
       className="rounded-lg border bg-(--color-surface) shadow-lg overflow-hidden"
@@ -71,6 +71,21 @@ export default function StageNode({ data, selected }: NodeProps & { data: FlowNo
               ⚠ {w}
             </span>
           ))}
+        </div>
+      )}
+      {(data as any).explainCost !== undefined && (
+        <div
+          className="border-t px-2.5 py-1 flex items-center justify-between"
+          style={{ borderColor: 'var(--color-border-soft)' }}
+        >
+          <span className="text-[8.5px] font-bold tracking-wider" style={{ color: (data as any).explainColor }}>
+            COST {(data as any).explainCost}
+          </span>
+          {(data as any).explainRows !== undefined && (
+            <span className="text-[8.5px]" style={{ color: 'var(--color-text-faint)' }}>
+              {(data as any).explainRows} rows
+            </span>
+          )}
         </div>
       )}
     </div>
