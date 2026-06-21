@@ -17,6 +17,7 @@ import type { ParseResult, SchemaGraph } from './sql/types';
 import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
 import { formatSql } from './lib/sqlFormatter';
 import ComplexityBadge from './components/ComplexityBadge';
+import { explainError } from './lib/errorExplanations';
 
 export default function App() {
   const [sql, setSql] = useState(() => decodeUrlState().sql ?? '');
@@ -179,20 +180,30 @@ export default function App() {
           </div>
           {mode === 'query' && !result.ok && result.error && (
             <div
-              className="flex items-start gap-2 rounded-lg border px-3 py-2 text-[11.5px] fade-up"
+              className="flex flex-col gap-1 rounded-lg border px-3 py-2 text-[11.5px] fade-up"
               style={{ borderColor: 'var(--color-rose)', background: 'rgba(240,112,140,0.08)', color: 'var(--color-rose)' }}
             >
-              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-              <span>{result.error}</span>
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>{result.error}</span>
+              </div>
+              {explainError(result.error) && (
+                <span className="text-[10.5px] pl-5 opacity-75">{explainError(result.error)}</span>
+              )}
             </div>
           )}
           {mode === 'schema' && schemaError && (
             <div
-              className="flex items-start gap-2 rounded-lg border px-3 py-2 text-[11.5px] fade-up"
+              className="flex flex-col gap-1 rounded-lg border px-3 py-2 text-[11.5px] fade-up"
               style={{ borderColor: 'var(--color-rose)', background: 'rgba(240,112,140,0.08)', color: 'var(--color-rose)' }}
             >
-              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-              <span>{schemaError}</span>
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>{schemaError}</span>
+              </div>
+              {explainError(schemaError) && (
+                <span className="text-[10.5px] pl-5 opacity-75">{explainError(schemaError)}</span>
+              )}
             </div>
           )}
           {mode === 'query' && <Legend view={view} />}
