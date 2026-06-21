@@ -29,6 +29,8 @@ import { explainError } from './lib/errorExplanations';
 import { addToHistory } from './lib/queryHistory';
 import QueryHistoryDropdown from './components/QueryHistoryDropdown';
 import { saveWorkspace, loadWorkspace } from './lib/workspaceStorage';
+import SchemaDiffPanel from './components/SchemaDiffPanel';
+import type { SchemaDiffResult } from './lib/schemaDiff';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -48,6 +50,8 @@ export default function App() {
   const [schemaGraph, setSchemaGraph] = useState<SchemaGraph | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
+  const [diffMode, setDiffMode] = useState(false);
+  const [diffResult, setDiffResult] = useState<SchemaDiffResult | null>(null);
   const [panelData, setPanelData] = useState<
     | { type: 'relation'; node: RelNode }
     | { type: 'schema'; node: SchemaNode }
@@ -271,28 +275,47 @@ export default function App() {
               <QueryHistoryDropdown onSelect={setSql} />
             </div>
           )}
-          {mode === 'schema' && schemaGraph && (
-            <div className="flex justify-end">
-              <DiagramTextExportMenu graph={schemaGraph} />
+          {mode === 'schema' && (
+            <div className="flex items-center justify-between gap-2">
               <button
-                onClick={() => downloadDDL(schemaGraph)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
-                title="Download as .sql file"
+                onClick={() => { setDiffMode((v) => !v); setDiffResult(null); }}
+                className="text-[10px] font-semibold px-2 py-1 rounded border transition-colors"
+                style={{
+                  borderColor: diffMode ? '#f0a93f' : 'var(--color-border)',
+                  color: diffMode ? '#f0a93f' : 'var(--color-text-faint)',
+                  background: diffMode ? 'rgba(240,169,63,0.08)' : 'transparent',
+                }}
               >
-                <FileDown size={12} strokeWidth={2.25} />
-                Export DDL
+                {diffMode ? '◀ Exit Diff' : '⇄ Diff Mode'}
               </button>
+              {schemaGraph && !diffMode && (
+                <div className="flex items-center gap-1">
+                  <DiagramTextExportMenu graph={schemaGraph} />
+                  <button
+                    onClick={() => downloadDDL(schemaGraph)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+                    title="Download as .sql file"
+                  >
+                    <FileDown size={12} strokeWidth={2.25} />
+                    Export DDL
+                  </button>
+                </div>
+              )}
             </div>
           )}
           <div className="flex-1 min-h-[160px]">
-            <SqlEditor
-              value={mode === 'schema' ? schemaSql : sql}
-              onChange={mode === 'schema' ? setSchemaSql : setSql}
-              errorLine={mode === 'schema' ? undefined : result.errorPosition?.line}
-              dialect={database}
-              theme={theme}
-            />
+            {mode === 'schema' && diffMode ? (
+              <SchemaDiffPanel database={database} onDiffResult={setDiffResult} />
+            ) : (
+              <SqlEditor
+                value={mode === 'schema' ? schemaSql : sql}
+                onChange={mode === 'schema' ? setSchemaSql : setSql}
+                errorLine={mode === 'schema' ? undefined : result.errorPosition?.line}
+                dialect={database}
+                theme={theme}
+              />
+            )}
           </div>
           {mode === 'query' && !result.ok && result.error && (
             <div
@@ -337,7 +360,9 @@ export default function App() {
             {mode === 'query' && showCanvas && (
               <ComplexityBadge result={result} />
             )}
-            {mode === 'schema' ? (
+            {mode === 'schema' && diffMode ? (
+              <SchemaDiffCanvas diffResult={diffResult} />
+            ) : mode === 'schema' ? (
               schemaGraph ? (
                 <DiagramCanvas
                   ref={canvasRef}
@@ -393,6 +418,86 @@ function SchemaEmptyState({ error }: { error: string | null }) {
         ) : (
           <p className="text-[12px]" style={{ color: 'var(--color-text-faint)' }}>
             Paste a CREATE TABLE script to visualize your schema.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const DIFF_CANVAS_COLOR: Record<string, string> = {
+  added: '#5fd896',
+  removed: '#f0708c',
+  modified: '#f0a93f',
+  unchanged: 'var(--color-text-faint)',
+};
+
+function SchemaDiffCanvas({ diffResult }: { diffResult: SchemaDiffResult | null }) {
+  if (!diffResult) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <p className="text-[12px]" style={{ color: 'var(--color-text-faint)' }}>
+          Paste two DDL scripts and click "Compare Schemas"
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 overflow-y-auto p-6">
+      <div className="max-w-2xl mx-auto flex flex-col gap-3">
+        <h2 className="text-[13px] font-bold" style={{ color: 'var(--color-text)' }}>
+          Schema Diff — {diffResult.tableDiffs.filter((t) => t.kind !== 'unchanged').length} table(s) changed
+        </h2>
+        {diffResult.tableDiffs.map((table) => (
+          <div
+            key={table.tableName}
+            className="rounded-lg border overflow-hidden"
+            style={{ borderColor: DIFF_CANVAS_COLOR[table.kind], borderWidth: table.kind === 'unchanged' ? 1 : 2 }}
+          >
+            <div
+              className="px-3 py-2 flex items-center gap-2"
+              style={{ background: `${DIFF_CANVAS_COLOR[table.kind]}12` }}
+            >
+              <span className="font-bold text-[11px]" style={{ color: DIFF_CANVAS_COLOR[table.kind] }}>
+                {table.kind === 'added' ? '+ ADDED' : table.kind === 'removed' ? '− REMOVED' : table.kind === 'modified' ? '~ MODIFIED' : '  UNCHANGED'}
+              </span>
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--color-text)' }}>
+                {table.tableName}
+              </span>
+            </div>
+            {table.kind !== 'unchanged' && (
+              <div className="divide-y" style={{ borderColor: 'var(--color-border-soft)' }}>
+                {table.columnDiffs
+                  .filter((c) => c.kind !== 'unchanged')
+                  .map((col) => (
+                    <div key={col.name} className="px-3 py-1.5 flex items-center gap-2 text-[10.5px]">
+                      <span style={{ color: DIFF_CANVAS_COLOR[col.kind] }}>
+                        {col.kind === 'added' ? '+' : col.kind === 'removed' ? '−' : '~'}
+                      </span>
+                      <span className="font-mono" style={{ color: 'var(--color-text-dim)' }}>{col.name}</span>
+                      {col.before && col.after && col.before !== col.after && (
+                        <span style={{ color: 'var(--color-text-faint)' }}>
+                          <span style={{ color: '#f0708c' }}>{col.before}</span>
+                          {' → '}
+                          <span style={{ color: '#5fd896' }}>{col.after}</span>
+                        </span>
+                      )}
+                      {col.kind === 'added' && col.after && (
+                        <span style={{ color: '#5fd896' }}>{col.after}</span>
+                      )}
+                      {col.kind === 'removed' && col.before && (
+                        <span style={{ color: '#f0708c' }}>{col.before}</span>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {!diffResult.hasChanges && (
+          <p className="text-[12px] text-center py-8" style={{ color: 'var(--color-text-faint)' }}>
+            ✓ Schemas are identical — no changes detected.
           </p>
         )}
       </div>
