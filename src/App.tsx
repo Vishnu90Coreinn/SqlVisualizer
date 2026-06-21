@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Network, AlertTriangle, Database, FileDown, HelpCircle, LayoutTemplate } from 'lucide-react';
 import HeaderActionsMenu from './components/HeaderActionsMenu';
 import HelpPanel from './components/HelpPanel';
+import QueryHints from './components/QueryHints';
+import { computeHints } from './sql/queryHints';
 import SchemaTemplatesModal from './components/SchemaTemplatesModal';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
@@ -412,6 +414,7 @@ export default function App() {
               )}
             </div>
           )}
+          {mode === 'query' && result.ok && <QueryHints hints={computeHints(result)} />}
           {mode === 'query' && <Legend view={view} />}
         </section>
 
