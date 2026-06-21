@@ -174,6 +174,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
           nodes={explainNodes}
           edges={displayEdges}
           nodeTypes={nodeTypes}
+          nodesDraggable
+          nodesConnectable={false}
           fitView
           fitViewOptions={{ padding: 0.18, maxZoom: 1.1 }}
           minZoom={0.15}
