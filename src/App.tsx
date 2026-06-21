@@ -316,39 +316,39 @@ export default function App() {
             onPickSample={mode === 'schema' ? setSchemaSql : setSql}
           />
           {mode === 'schema' && (
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setShowTemplates(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-semibold transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-faint)', background: 'transparent' }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11px] font-semibold transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
               >
-                <LayoutTemplate size={11} strokeWidth={2} />
+                <LayoutTemplate size={12} strokeWidth={2} />
                 Templates
               </button>
               <button
                 onClick={() => { setDiffMode((v) => !v); setDiffResult(null); }}
-                className="text-[10px] font-semibold px-2 py-1 rounded border transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11px] font-semibold transition-colors"
                 style={{
                   borderColor: diffMode ? '#f0a93f' : 'var(--color-border)',
-                  color: diffMode ? '#f0a93f' : 'var(--color-text-faint)',
-                  background: diffMode ? 'rgba(240,169,63,0.08)' : 'transparent',
+                  color: diffMode ? '#f0a93f' : 'var(--color-text-dim)',
+                  background: diffMode ? 'rgba(240,169,63,0.1)' : 'var(--color-bg-raised)',
                 }}
               >
                 {diffMode ? '◀ Exit Diff' : '⇄ Diff Mode'}
               </button>
               {schemaGraph && !diffMode && (
-                <div className="flex items-center gap-1">
+                <>
                   <DiagramTextExportMenu graph={schemaGraph} />
                   <button
                     onClick={() => downloadDDL(schemaGraph)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
                     style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
                     title="Download as .sql file"
                   >
-                    <FileDown size={12} strokeWidth={2.25} />
+                    <FileDown size={12} strokeWidth={2} />
                     Export DDL
                   </button>
-                </div>
+                </>
               )}
             </div>
           )}
@@ -360,8 +360,8 @@ export default function App() {
                   <button
                     onClick={handleFormat}
                     title="Format SQL (Alt+Shift+F)"
-                    className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-faint)', background: 'transparent' }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
                   >
                     <span className="font-mono text-[11px]">{'{}'}</span>
                     Format
