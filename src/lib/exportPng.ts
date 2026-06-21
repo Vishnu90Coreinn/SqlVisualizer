@@ -25,85 +25,123 @@ export async function exportDiagramAsCard(
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
 
-  // Background
+  // Background — dark base
   ctx.fillStyle = '#090c12';
   ctx.fillRect(0, 0, W, H);
 
+  // Radial amber glow top-left
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 480);
+  glow.addColorStop(0, 'rgba(240,169,63,0.07)');
+  glow.addColorStop(1, 'rgba(240,169,63,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  // Radial cyan glow bottom-right
+  const glow2 = ctx.createRadialGradient(W, H, 0, W, H, 520);
+  glow2.addColorStop(0, 'rgba(79,214,224,0.05)');
+  glow2.addColorStop(1, 'rgba(79,214,224,0)');
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, W, H);
+
   // Subtle grid dots
-  ctx.fillStyle = '#1c2436';
-  for (let x = 24; x < W; x += 28) {
-    for (let y = 24; y < H; y += 28) {
+  ctx.fillStyle = 'rgba(28,36,54,0.8)';
+  for (let x = 28; x < W; x += 28) {
+    for (let y = 28; y < H; y += 28) {
       ctx.beginPath();
       ctx.arc(x, y, 1, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  // Header bar background
-  ctx.fillStyle = '#0f1420';
-  ctx.fillRect(0, 0, W, 72);
+  // Header bar — slightly raised bg
+  ctx.fillStyle = 'rgba(15,20,32,0.9)';
+  ctx.fillRect(0, 0, W, 80);
 
-  // Amber accent line at top
+  // Amber accent line at top (thicker)
   ctx.fillStyle = '#f0a93f';
-  ctx.fillRect(0, 0, W, 3);
+  ctx.fillRect(0, 0, W, 4);
 
-  // Logo text
-  ctx.font = 'bold 22px "JetBrains Mono", monospace';
+  // Logo — larger, more prominent
+  ctx.font = 'bold 28px "JetBrains Mono", ui-monospace, monospace';
   ctx.fillStyle = '#e7ecf7';
-  ctx.fillText('SQL', 32, 44);
+  const sqlW = ctx.measureText('SQL').width;
+  ctx.fillText('SQL', 36, 50);
   ctx.fillStyle = '#f0a93f';
-  ctx.fillText('//', 32 + ctx.measureText('SQL').width, 44);
+  const slashW = ctx.measureText('//').width;
+  ctx.fillText('//', 36 + sqlW, 50);
   ctx.fillStyle = '#e7ecf7';
-  ctx.fillText('VISUALIZER', 32 + ctx.measureText('SQL//').width, 44);
+  ctx.fillText('VISUALIZER', 36 + sqlW + slashW, 50);
 
-  // Subtitle
-  ctx.font = '13px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#5a6480';
-  const subtitle = mode === 'schema' ? 'schema explorer' : 'paste a query, see how it actually runs';
-  ctx.fillText(subtitle, 32, 62);
+  // Subtitle under logo
+  ctx.font = '13px "JetBrains Mono", ui-monospace, monospace';
+  ctx.fillStyle = '#3d4d6a';
+  const subtitle = mode === 'schema' ? 'schema explorer' : 'sql query visualizer';
+  ctx.fillText(subtitle, 37, 68);
 
-  // URL tag (right side)
-  ctx.font = 'bold 11px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#f0a93f';
+  // URL pill (right side of header)
+  ctx.font = 'bold 12px "JetBrains Mono", ui-monospace, monospace';
   const urlText = 'sql-visualizer-theta.vercel.app';
-  const urlW = ctx.measureText(urlText).width;
-  ctx.fillText(urlText, W - urlW - 32, 44);
+  const urlW2 = ctx.measureText(urlText).width;
+  const pillX = W - urlW2 - 72;
+  const pillY = 28;
+  const pillW = urlW2 + 24;
+  const pillH = 26;
+  // Pill background
+  ctx.fillStyle = 'rgba(240,169,63,0.1)';
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, pillH, 6);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(240,169,63,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  // Pill text
+  ctx.fillStyle = '#f0a93f';
+  ctx.fillText(urlText, pillX + 12, pillY + 17);
 
-  // Diagram image (composite in middle section)
+  // Diagram image
   const img = new Image();
   await new Promise<void>((resolve) => {
     img.onload = () => resolve();
     img.src = diagramDataUrl;
   });
 
-  const diagramArea = { x: 24, y: 80, w: W - 48, h: H - 160 };
-  const scale = Math.min(diagramArea.w / img.width, diagramArea.h / img.height);
+  const FOOTER_H = 68;
+  const diagramArea = { x: 0, y: 88, w: W, h: H - 88 - FOOTER_H };
+  const scale = Math.min(diagramArea.w / img.width, diagramArea.h / img.height) * 0.92;
   const dw = img.width * scale;
   const dh = img.height * scale;
   const dx = diagramArea.x + (diagramArea.w - dw) / 2;
   const dy = diagramArea.y + (diagramArea.h - dh) / 2;
 
+  // Subtle vignette over diagram area
   ctx.drawImage(img, dx, dy, dw, dh);
 
-  // SQL snippet bar at bottom
-  ctx.fillStyle = '#0f1420';
-  ctx.fillRect(0, H - 72, W, 72);
+  // Footer
+  ctx.fillStyle = 'rgba(9,12,18,0.92)';
+  ctx.fillRect(0, H - FOOTER_H, W, FOOTER_H);
+  ctx.fillStyle = '#1c2436';
+  ctx.fillRect(0, H - FOOTER_H, W, 1);
 
-  ctx.fillStyle = '#28324a';
-  ctx.fillRect(0, H - 72, W, 1);
+  // SQL label badge
+  ctx.fillStyle = 'rgba(240,169,63,0.12)';
+  ctx.beginPath();
+  ctx.roundRect(32, H - FOOTER_H + 18, 36, 18, 4);
+  ctx.fill();
+  ctx.font = 'bold 10px "JetBrains Mono", ui-monospace, monospace';
+  ctx.fillStyle = '#f0a93f';
+  ctx.fillText('SQL', 40, H - FOOTER_H + 31);
 
-  ctx.font = '12px "JetBrains Mono", monospace';
+  // SQL snippet
+  const snippet = sql.replace(/\s+/g, ' ').trim();
+  const maxLen = 115;
+  const displaySnippet = snippet.length > maxLen ? snippet.slice(0, maxLen) + '…' : snippet;
+  ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
   ctx.fillStyle = '#5a6480';
-  ctx.fillText('SQL', 32, H - 44);
-
-  const snippet = sql.replace(/\s+/g, ' ').trim().slice(0, 110) + (sql.length > 110 ? '…' : '');
-  ctx.font = '12px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#8b95ad';
-  ctx.fillText(snippet, 80, H - 44);
+  ctx.fillText(displaySnippet, 80, H - FOOTER_H + 31);
 
   // Amber bottom accent
   ctx.fillStyle = '#f0a93f';
-  ctx.fillRect(0, H - 3, W, 3);
+  ctx.fillRect(0, H - 4, W, 4);
 
   // Download
   const a = document.createElement('a');
