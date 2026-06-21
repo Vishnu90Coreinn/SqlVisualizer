@@ -40,6 +40,7 @@ import ExplainImportModal from './components/ExplainImportModal';
 import type { ExplainResult } from './lib/explainParser';
 import QueryDiffPanel from './components/QueryDiffPanel';
 import CommandPalette, { buildCommands } from './components/CommandPalette';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -575,6 +576,7 @@ export default function App() {
           onClose={() => setShowExplain(false)}
         />
       )}
+      <Analytics />
     </div>
   );
 }
