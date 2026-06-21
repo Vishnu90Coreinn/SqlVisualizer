@@ -15,6 +15,7 @@ import { SAMPLE_QUERIES } from './lib/sampleQueries';
 import { DDL_SAMPLE_QUERIES } from './lib/ddlSampleQueries';
 import type { ParseResult, SchemaGraph } from './sql/types';
 import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
+import { formatSql } from './lib/sqlFormatter';
 
 export default function App() {
   const [sql, setSql] = useState(() => decodeUrlState().sql ?? '');
@@ -59,9 +60,24 @@ export default function App() {
     encodeUrlState({ mode, dialect: database, sql });
   }, [mode, database, sql]);
 
+  function handleFormat() {
+    const currentSql = mode === 'schema' ? schemaSql : sql;
+    const formatted = formatSql(currentSql, database);
+    if (mode === 'schema') setSchemaSql(formatted);
+    else setSql(formatted);
+  }
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const mod = e.ctrlKey || e.metaKey;
+      if (e.altKey && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        const currentSql = mode === 'schema' ? schemaSql : sql;
+        const formatted = formatSql(currentSql, database);
+        if (mode === 'schema') setSchemaSql(formatted);
+        else setSql(formatted);
+        return;
+      }
       if (!mod) return;
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -87,7 +103,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [sql, database, mode]);
+  }, [sql, schemaSql, database, mode]);
 
   const result = results[selectedIdx] ?? { ok: false };
   const showCanvas = result.ok;
@@ -150,6 +166,7 @@ export default function App() {
             mode={mode}
             onDatabaseChange={setDatabase}
             onPickSample={mode === 'schema' ? setSchemaSql : setSql}
+            onFormat={handleFormat}
           />
           <div className="flex-1 min-h-[160px]">
             <SqlEditor
