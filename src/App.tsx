@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Network, AlertTriangle, Database, FileDown, HelpCircle, LayoutTemplate } from 'lucide-react';
+import { Network, AlertTriangle, Database, FileDown, HelpCircle, LayoutTemplate, BookOpen } from 'lucide-react';
 import HeaderActionsMenu from './components/HeaderActionsMenu';
 import HelpPanel from './components/HelpPanel';
 import QueryHints from './components/QueryHints';
@@ -28,6 +28,7 @@ import { DDL_SAMPLE_QUERIES } from './lib/ddlSampleQueries';
 import type { ParseResult, SchemaGraph } from './sql/types';
 import { encodeUrlState, decodeUrlState, copyShareLink, isEmbedMode } from './lib/urlState';
 import { downloadDDL } from './lib/ddlGenerator';
+import { downloadSchemaDocs } from './lib/schemaDocsGenerator';
 import { formatSql } from './lib/sqlFormatter';
 import ComplexityBadge from './components/ComplexityBadge';
 import { explainError } from './lib/errorExplanations';
@@ -389,6 +390,15 @@ export default function App() {
               {schemaGraph && !diffMode && (
                 <>
                   <DiagramTextExportMenu graph={schemaGraph} />
+                  <button
+                    onClick={() => downloadSchemaDocs(schemaGraph)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+                    title="Generate Markdown documentation"
+                  >
+                    <BookOpen size={12} strokeWidth={2} />
+                    Docs
+                  </button>
                   <button
                     onClick={() => downloadDDL(schemaGraph)}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
