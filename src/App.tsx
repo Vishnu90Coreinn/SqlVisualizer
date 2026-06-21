@@ -314,6 +314,7 @@ export default function App() {
                 errorLine={mode === 'schema' ? undefined : result.errorPosition?.line}
                 dialect={database}
                 theme={theme}
+                completionResult={mode === 'query' ? result : null}
               />
             )}
           </div>

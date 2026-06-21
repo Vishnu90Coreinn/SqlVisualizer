@@ -3,6 +3,9 @@ import CodeMirror from '@uiw/react-codemirror';
 import { sql, PostgreSQL, MySQL, SQLite, MSSQL, StandardSQL, type SQLDialect } from '@codemirror/lang-sql';
 import { EditorView, Decoration } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
+import { autocompletion } from '@codemirror/autocomplete';
+import { buildSqlCompletions } from '../lib/sqlCompletions';
+import type { ParseResult } from '../sql/types';
 
 const dialectMap: Record<string, SQLDialect | undefined> = {
   PostgreSQL,
@@ -17,7 +20,7 @@ const BASIC_SETUP = {
   lineNumbers: true,
   highlightActiveLine: true,
   bracketMatching: true,
-  autocompletion: false,
+  autocompletion: true,
   foldGutter: false,
   indentOnInput: true,
 } as const;
@@ -56,6 +59,20 @@ const lightTheme = EditorView.theme(
       color: '#c97f00 !important',
       outline: 'none',
     },
+    '.cm-tooltip.cm-tooltip-autocomplete': {
+      background: '#ffffff',
+      border: '1px solid #d0d6e3',
+      borderRadius: '6px',
+      overflow: 'hidden',
+    },
+    '.cm-tooltip-autocomplete ul li': {
+      color: '#4a5370',
+      padding: '3px 10px',
+    },
+    '.cm-tooltip-autocomplete ul li[aria-selected]': {
+      background: 'rgba(201,127,0,0.12)',
+      color: '#c97f00',
+    },
   },
   { dark: false }
 );
@@ -93,6 +110,20 @@ const baseTheme = EditorView.theme(
       color: '#f0a93f !important',
       outline: 'none',
     },
+    '.cm-tooltip.cm-tooltip-autocomplete': {
+      background: '#141a28',
+      border: '1px solid #28324a',
+      borderRadius: '6px',
+      overflow: 'hidden',
+    },
+    '.cm-tooltip-autocomplete ul li': {
+      color: '#8b95ad',
+      padding: '3px 10px',
+    },
+    '.cm-tooltip-autocomplete ul li[aria-selected]': {
+      background: 'rgba(240,169,63,0.15)',
+      color: '#f0a93f',
+    },
   },
   { dark: true }
 );
@@ -117,20 +148,33 @@ export default function SqlEditor({
   errorLine,
   dialect,
   theme,
+  completionResult,
 }: {
   value: string;
   onChange: (v: string) => void;
   errorLine?: number;
   dialect?: string;
   theme?: 'dark' | 'light';
+  completionResult?: ParseResult | null;
 }) {
   const extensions = useMemo(
-    () => [
-      sql({ dialect: dialect ? dialectMap[dialect] : undefined }),
-      theme === 'light' ? lightTheme : baseTheme,
-      errorLineExt(errorLine),
-    ],
-    [errorLine, dialect, theme]
+    () => {
+      const exts: Extension[] = [
+        sql({ dialect: dialect ? dialectMap[dialect] : undefined }),
+        theme === 'light' ? lightTheme : baseTheme,
+        errorLineExt(errorLine),
+      ];
+      if (completionResult) {
+        exts.push(
+          autocompletion({
+            override: [buildSqlCompletions(completionResult)],
+            activateOnTyping: true,
+          })
+        );
+      }
+      return exts;
+    },
+    [errorLine, dialect, theme, completionResult]
   );
 
   return (
