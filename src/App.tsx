@@ -11,6 +11,7 @@ import SampleGrid from './components/SampleGrid';
 import DiagramCanvas, { type DiagramCanvasHandle, type ViewMode } from './components/DiagramCanvas';
 import Legend from './components/Legend';
 import ExportMenu from './components/ExportMenu';
+import DiagramTextExportMenu from './components/DiagramTextExportMenu';
 import { parseMultiStatement } from './sql/parser';
 import StatementTabs from './components/StatementTabs';
 import { parseDDL } from './sql/ddlParser';
@@ -253,6 +254,7 @@ export default function App() {
           )}
           {mode === 'schema' && schemaGraph && (
             <div className="flex justify-end">
+              <DiagramTextExportMenu graph={schemaGraph} />
               <button
                 onClick={() => downloadDDL(schemaGraph)}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
