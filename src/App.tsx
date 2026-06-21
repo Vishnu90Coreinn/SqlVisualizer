@@ -16,6 +16,7 @@ import { DDL_SAMPLE_QUERIES } from './lib/ddlSampleQueries';
 import type { ParseResult, SchemaGraph } from './sql/types';
 import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
 import { formatSql } from './lib/sqlFormatter';
+import ComplexityBadge from './components/ComplexityBadge';
 
 export default function App() {
   const [sql, setSql] = useState(() => decodeUrlState().sql ?? '');
@@ -206,6 +207,9 @@ export default function App() {
             />
           )}
           <div className="flex-1 relative">
+            {mode === 'query' && showCanvas && (
+              <ComplexityBadge result={result} />
+            )}
             {mode === 'schema' ? (
               schemaGraph ? (
                 <DiagramCanvas
