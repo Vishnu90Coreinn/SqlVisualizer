@@ -1,5 +1,25 @@
 import type { RelKind, RelEdgeKind, ColumnRole, FlowStageKind, SchemaNodeRole } from '../sql/types';
 
+// ── Color palettes ───────────────────────────────────────────────────────────
+export type DiagramPalette = 'amber' | 'ocean' | 'forest';
+
+export const PALETTE_LABELS: Record<DiagramPalette, string> = {
+  amber: 'Amber',
+  ocean: 'Ocean',
+  forest: 'Forest',
+};
+
+// Per-palette table/cte/subquery colors
+export const PALETTE_KIND_COLOR: Record<DiagramPalette, Record<RelKind, string>> = {
+  amber: { table: '#4fd6e0', cte: '#f0a93f', subquery: '#b08af0', 'write-target': '#f0708c' },
+  ocean: { table: '#38bdf8', cte: '#818cf8', subquery: '#e879f9', 'write-target': '#f87171' },
+  forest: { table: '#4ade80', cte: '#facc15', subquery: '#a78bfa', 'write-target': '#f87171' },
+};
+
+let _palette: DiagramPalette = 'amber';
+export function setActivePalette(p: DiagramPalette) { _palette = p; }
+export function getActivePalette(): DiagramPalette { return _palette; }
+
 export const KIND_COLOR: Record<RelKind, string> = {
   table: '#4fd6e0',
   cte: '#f0a93f',

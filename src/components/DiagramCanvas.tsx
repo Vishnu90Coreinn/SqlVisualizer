@@ -15,6 +15,8 @@ import SchemaNodeComponent from './nodes/SchemaNode';
 import { exportDiagramAsPng, exportDiagramAsSvg, exportDiagramAsCard } from '../lib/exportPng';
 import DiagramToolbar from './DiagramToolbar';
 import DiagramSearch from './DiagramSearch';
+import PalettePicker from './PalettePicker';
+import { PALETTE_KIND_COLOR, type DiagramPalette } from '../lib/theme';
 import { layoutSchemaGraph } from '../layout/schemaLayout';
 import { getCostColor, type ExplainResult } from '../lib/explainParser';
 
@@ -37,6 +39,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
     const [activeColumn, setActiveColumn] = useState<{ nodeId: string; col: string } | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [bgStyle, setBgStyle] = useState<'dots' | 'lines' | 'none'>('dots');
+    const [palette, setPalette] = useState<DiagramPalette>(() =>
+      (localStorage.getItem('sql-viz-palette') as DiagramPalette) ?? 'amber'
+    );
+    function handlePaletteChange(p: DiagramPalette) {
+      setPalette(p);
+      localStorage.setItem('sql-viz-palette', p);
+    }
     const [isAnimating, setIsAnimating] = useState(false);
     const [activeStageId, setActiveStageId] = useState<string | null>(null);
     const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -59,8 +68,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
     }, []);
 
     const { nodes: layoutNodes, edges } = useMemo(
-      () => buildGraph(result, view, collapsedLanes, toggleLane),
-      [result, view, collapsedLanes, toggleLane]
+      () => buildGraph(result, view, collapsedLanes, toggleLane, PALETTE_KIND_COLOR[palette]),
+      [result, view, collapsedLanes, toggleLane, palette]
     );
 
     // Local node state so drag positions persist across re-renders
@@ -276,6 +285,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
           />
         </ReactFlow>
         <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+          <PalettePicker value={palette} onChange={handlePaletteChange} />
           <DiagramSearch onSearch={setSearchQuery} />
           <DiagramToolbar
             onZoomIn={() => rfInstance.current?.zoomIn({ duration: 200 })}
@@ -298,6 +308,7 @@ function buildGraph(
   view: ViewMode,
   collapsedLanes: Set<string> = new Set(),
   toggleLane: (lane: string) => void = () => {},
+  kindColor: typeof KIND_COLOR = KIND_COLOR,
 ): { nodes: Node[]; edges: Edge[] } {
   if (!result.ok) return { nodes: [], edges: [] };
 
@@ -309,7 +320,7 @@ function buildGraph(
       id: n.id,
       type: 'relation',
       position: positions.get(n.id) ?? { x: 0, y: 0 },
-      data: n as any,
+      data: { ...n, _kindColor: kindColor } as any,
       draggable: true,
     }));
 

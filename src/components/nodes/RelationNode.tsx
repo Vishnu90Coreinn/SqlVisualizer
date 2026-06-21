@@ -9,10 +9,11 @@ const ICONS = { table: Table2, cte: GitMerge, subquery: Brackets, 'write-target'
 interface RelNodeData extends RelNode {
   _activeColumn?: { nodeId: string; col: string } | null;
   _onColumnClick?: (nodeId: string, col: string) => void;
+  _kindColor?: Record<string, string>;
 }
 
 export default function RelationNode({ data, selected }: NodeProps & { data: RelNodeData }) {
-  const color = KIND_COLOR[data.kind];
+  const color = (data._kindColor ?? KIND_COLOR)[data.kind] ?? KIND_COLOR[data.kind];
   const Icon = ICONS[data.kind];
   const dashed = data.kind === 'subquery';
   const activeCol = data._activeColumn;
