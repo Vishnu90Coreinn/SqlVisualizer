@@ -32,15 +32,17 @@ export interface DiagramCanvasHandle {
 const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode; onNodeClick?: (nodeId: string, nodeData: any) => void; explainResult?: ExplainResult | null }>(
   ({ result, view, onNodeClick, explainResult }, ref) => {
     const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(new Set());
+    const [activeColumn, setActiveColumn] = useState<{ nodeId: string; col: string } | null>(null);
     const [isAnimating, setIsAnimating] = useState(false);
     const [activeStageId, setActiveStageId] = useState<string | null>(null);
     const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const rfInstance = useRef<ReactFlowInstance | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
-    // Reset collapsed state when the parsed result changes (new query)
+    // Reset collapsed state and lineage when the parsed result changes
     useEffect(() => {
       setCollapsedLanes(new Set());
+      setActiveColumn(null);
     }, [result]);
 
     const toggleLane = useCallback((lane: string) => {
@@ -158,6 +160,46 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       });
     }, [displayNodes, explainResult, view]);
 
+    // Column lineage: compute connected node IDs for the active column
+    const onColumnClick = useCallback((nodeId: string, col: string) => {
+      setActiveColumn((prev) => prev?.nodeId === nodeId && prev?.col === col ? null : { nodeId, col });
+    }, []);
+
+    const lineageNodeIds = useMemo(() => {
+      if (!activeColumn || view !== 'relationship') return null;
+      const connected = new Set<string>([activeColumn.nodeId]);
+      for (const e of edges) {
+        if (e.source === activeColumn.nodeId) connected.add(e.target);
+        if (e.target === activeColumn.nodeId) connected.add(e.source);
+      }
+      return connected;
+    }, [activeColumn, edges, view]);
+
+    const lineageNodes = useMemo(() => {
+      if (!lineageNodeIds || view !== 'relationship') return explainNodes;
+      return explainNodes.map((n) => {
+        if (n.type !== 'relation') return n;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            _activeColumn: activeColumn,
+            _onColumnClick: onColumnClick,
+          },
+        };
+      });
+    }, [explainNodes, lineageNodeIds, activeColumn, onColumnClick, view]);
+
+    const lineageEdges = useMemo(() => {
+      if (!lineageNodeIds || view !== 'relationship') return displayEdges;
+      return displayEdges.map((e) => {
+        const connected = lineageNodeIds.has(e.source) && lineageNodeIds.has(e.target);
+        return connected
+          ? { ...e, style: { ...e.style, strokeWidth: 3, opacity: 1 }, animated: true }
+          : { ...e, style: { ...e.style, opacity: 0.15 } };
+      });
+    }, [displayEdges, lineageNodeIds, view]);
+
     useImperativeHandle(ref, () => ({
       fitView: () => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1 }),
       exportPng: async () => {
@@ -183,8 +225,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       <div ref={wrapperRef} style={{ width: '100%', height: '100%' }}>
         <ReactFlow
           key={view}
-          nodes={explainNodes}
-          edges={displayEdges}
+          nodes={lineageNodes}
+          edges={lineageEdges}
           nodeTypes={nodeTypes}
           nodesDraggable
           nodesConnectable={false}

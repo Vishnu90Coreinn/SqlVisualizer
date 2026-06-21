@@ -6,15 +6,23 @@ import { REL_NODE_WIDTH } from '../../layout/dagreLayout';
 
 const ICONS = { table: Table2, cte: GitMerge, subquery: Brackets, 'write-target': PenLine } as const;
 
-export default function RelationNode({ data, selected }: NodeProps & { data: RelNode }) {
+interface RelNodeData extends RelNode {
+  _activeColumn?: { nodeId: string; col: string } | null;
+  _onColumnClick?: (nodeId: string, col: string) => void;
+}
+
+export default function RelationNode({ data, selected }: NodeProps & { data: RelNodeData }) {
   const color = KIND_COLOR[data.kind];
   const Icon = ICONS[data.kind];
   const dashed = data.kind === 'subquery';
+  const activeCol = data._activeColumn;
+  const isThisNodeActive = activeCol?.nodeId === data.id;
+  const activeColName = activeCol?.col ?? null;
 
   return (
     <div
-      style={{ width: REL_NODE_WIDTH, borderColor: selected ? color : 'var(--color-border)' }}
-      className="rounded-lg border bg-(--color-surface) shadow-lg overflow-hidden transition-shadow"
+      style={{ width: REL_NODE_WIDTH, borderColor: selected ? color : activeCol && !isThisNodeActive ? 'var(--color-border-soft)' : 'var(--color-border)', opacity: activeCol && !isThisNodeActive ? 0.4 : 1 }}
+      className="rounded-lg border bg-(--color-surface) shadow-lg overflow-hidden transition-all"
     >
       <Handle type="target" position={Position.Left} style={{ background: color, border: 'none', width: 7, height: 7 }} />
       <Handle type="source" position={Position.Right} style={{ background: color, border: 'none', width: 7, height: 7 }} />
@@ -44,20 +52,32 @@ export default function RelationNode({ data, selected }: NodeProps & { data: Rel
         {data.columns.map((col) => {
           const primaryRole = [...col.roles][0];
           const roleColor = primaryRole ? ROLE_COLOR[primaryRole] : 'var(--color-text-faint)';
+          const isActive = isThisNodeActive && activeColName === col.name;
+          const isDimmed = isThisNodeActive && activeColName !== null && activeColName !== col.name;
+
           return (
-            <div key={col.name} className="flex items-center gap-1.5 px-2.5 py-[3px]" title={[...col.roles].join(', ')}>
-              <span className="rounded-full shrink-0" style={{ width: 5, height: 5, background: roleColor }} />
-              <span className="text-[11px] truncate flex-1" style={{ color: 'var(--color-text-dim)' }}>
+            <div
+              key={col.name}
+              className="flex items-center gap-1.5 px-2.5 py-[3px] cursor-pointer transition-all"
+              title={isActive ? 'Click to clear' : `Click to trace lineage of "${col.name}"`}
+              style={{
+                background: isActive ? `${roleColor}18` : 'transparent',
+                opacity: isDimmed ? 0.3 : 1,
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                data._onColumnClick?.(data.id, col.name);
+              }}
+            >
+              <span
+                className="rounded-full shrink-0 transition-all"
+                style={{ width: isActive ? 7 : 5, height: isActive ? 7 : 5, background: roleColor, boxShadow: isActive ? `0 0 6px ${roleColor}` : 'none' }}
+              />
+              <span className="text-[11px] truncate flex-1" style={{ color: isActive ? 'var(--color-text)' : 'var(--color-text-dim)', fontWeight: isActive ? 700 : 400 }}>
                 {col.name}
               </span>
               {(col.roles.has('join') || col.roles.has('filter')) && (
-                <span
-                  className="text-[8px] shrink-0"
-                  style={{ color: '#f0a93f', opacity: 0.7 }}
-                  title="Consider adding an index — this column is used in a JOIN or WHERE clause"
-                >
-                  ⚡
-                </span>
+                <span className="text-[8px] shrink-0" style={{ color: '#f0a93f', opacity: 0.7 }} title="Consider adding an index">⚡</span>
               )}
             </div>
           );
