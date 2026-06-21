@@ -1,4 +1,4 @@
-import { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
+import { useMemo, forwardRef, useImperativeHandle, useRef, useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow, Background, Controls, MiniMap, BackgroundVariant,
   MarkerType, type Node, type Edge, type ReactFlowInstance,
@@ -27,9 +27,28 @@ export interface DiagramCanvasHandle {
 
 const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode }>(
   ({ result, view }, ref) => {
-    const { nodes, edges } = useMemo(() => buildGraph(result, view), [result, view]);
+    const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(new Set());
     const rfInstance = useRef<ReactFlowInstance | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+
+    // Reset collapsed state when the parsed result changes (new query)
+    useEffect(() => {
+      setCollapsedLanes(new Set());
+    }, [result]);
+
+    const toggleLane = useCallback((lane: string) => {
+      setCollapsedLanes((prev) => {
+        const next = new Set(prev);
+        if (next.has(lane)) next.delete(lane);
+        else next.add(lane);
+        return next;
+      });
+    }, []);
+
+    const { nodes, edges } = useMemo(
+      () => buildGraph(result, view, collapsedLanes, toggleLane),
+      [result, view, collapsedLanes, toggleLane]
+    );
 
     useImperativeHandle(ref, () => ({
       fitView: () => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1 }),
@@ -80,7 +99,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
 
 export default DiagramCanvas;
 
-function buildGraph(result: ParseResult, view: ViewMode): { nodes: Node[]; edges: Edge[] } {
+function buildGraph(
+  result: ParseResult,
+  view: ViewMode,
+  collapsedLanes: Set<string> = new Set(),
+  toggleLane: (lane: string) => void = () => {},
+): { nodes: Node[]; edges: Edge[] } {
   if (!result.ok) return { nodes: [], edges: [] };
 
   if (view === 'relationship' && result.relationship) {
@@ -118,7 +142,7 @@ function buildGraph(result: ParseResult, view: ViewMode): { nodes: Node[]; edges
     const graph = result.flow;
     const { positions, laneIndex, laneHeight } = layoutFlowGraph(graph);
 
-    const stageNodes: Node[] = graph.nodes.map((n) => ({
+    const allStageNodes: Node[] = graph.nodes.map((n) => ({
       id: n.id,
       type: 'stage',
       position: positions.get(n.id) ?? { x: 0, y: 0 },
@@ -128,16 +152,28 @@ function buildGraph(result: ParseResult, view: ViewMode): { nodes: Node[]; edges
       draggable: true,
     }));
 
+    // Filter out stage nodes belonging to collapsed lanes
+    const visibleStageNodes = allStageNodes.filter(
+      (n) => !collapsedLanes.has((n.data as any).lane)
+    );
+
+    const visibleIds = new Set(visibleStageNodes.map((n) => n.id));
+
     const laneLabelNodes: Node[] = graph.lanes.map((lane) => ({
       id: `lane_${lane}`,
       type: 'laneLabel',
       position: { x: -190, y: (laneIndex.get(lane) ?? 0) * laneHeight + 18 },
-      data: { label: lane, isMain: lane === 'main' },
+      data: {
+        label: lane,
+        isMain: lane === 'main',
+        collapsed: collapsedLanes.has(lane),
+        onToggle: lane === 'main' ? undefined : () => toggleLane(lane),
+      },
       draggable: false,
       selectable: false,
     }));
 
-    const edges: Edge[] = graph.edges.map((e) => {
+    const allEdges: Edge[] = graph.edges.map((e) => {
       const sourceNode = graph.nodes.find((n) => n.id === e.source);
       const color = e.isReference ? '#f0a93f' : sourceNode ? STAGE_COLOR[sourceNode.kind] : '#5a6480';
       return {
@@ -155,7 +191,12 @@ function buildGraph(result: ParseResult, view: ViewMode): { nodes: Node[]; edges
       };
     });
 
-    return { nodes: [...laneLabelNodes, ...stageNodes], edges };
+    // Hide edges where either endpoint is a collapsed (hidden) stage node
+    const visibleEdges = allEdges.filter(
+      (e) => visibleIds.has(e.source) && visibleIds.has(e.target)
+    );
+
+    return { nodes: [...laneLabelNodes, ...visibleStageNodes], edges: visibleEdges };
   }
 
   if (view === 'schema' && result.schema) {
