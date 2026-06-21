@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Network, AlertTriangle, Database, FileDown } from 'lucide-react';
+import { Network, AlertTriangle, Database, FileDown, HelpCircle } from 'lucide-react';
 import HeaderActionsMenu from './components/HeaderActionsMenu';
+import HelpPanel from './components/HelpPanel';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
 import EmbedModal from './components/EmbedModal';
@@ -54,6 +55,7 @@ export default function App() {
   const [schemaGraph, setSchemaGraph] = useState<SchemaGraph | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [explainResult, setExplainResult] = useState<ExplainResult | null>(null);
   const [showExplain, setShowExplain] = useState(false);
   const [diffMode, setDiffMode] = useState(false);
@@ -283,6 +285,18 @@ export default function App() {
             onEmbed={() => setShowEmbed(true)}
           />
           <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
+          <button
+            onClick={() => setShowHelp((v) => !v)}
+            title="Features & shortcuts"
+            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+            style={{
+              borderColor: showHelp ? '#f0a93f' : 'var(--color-border)',
+              color: showHelp ? '#f0a93f' : 'var(--color-text-dim)',
+              background: 'var(--color-bg-raised)',
+            }}
+          >
+            <HelpCircle size={13} strokeWidth={2.25} />
+          </button>
         </div>
       </header>
 
@@ -431,6 +445,7 @@ export default function App() {
         </section>
       </main>
       {showEmbed && <EmbedModal onClose={() => setShowEmbed(false)} />}
+      {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
       {showExplain && (
         <ExplainImportModal
           onImport={(r) => setExplainResult(r)}
