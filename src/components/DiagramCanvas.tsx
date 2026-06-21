@@ -12,7 +12,7 @@ import RelationNode from './nodes/RelationNode';
 import StageNode from './nodes/StageNode';
 import LaneLabelNode from './nodes/LaneLabelNode';
 import SchemaNodeComponent from './nodes/SchemaNode';
-import { exportDiagramAsPng } from '../lib/exportPng';
+import { exportDiagramAsPng, exportDiagramAsSvg } from '../lib/exportPng';
 import { layoutSchemaGraph } from '../layout/schemaLayout';
 
 export type ViewMode = 'relationship' | 'flow' | 'schema';
@@ -22,6 +22,7 @@ const nodeTypes = { relation: RelationNode, stage: StageNode, laneLabel: LaneLab
 export interface DiagramCanvasHandle {
   fitView: () => void;
   exportPng: () => Promise<void>;
+  exportSvg: () => Promise<void>;
 }
 
 const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode }>(
@@ -34,6 +35,9 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       fitView: () => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1 }),
       exportPng: async () => {
         if (wrapperRef.current) await exportDiagramAsPng(wrapperRef.current);
+      },
+      exportSvg: async () => {
+        if (wrapperRef.current) await exportDiagramAsSvg(wrapperRef.current);
       },
     }));
 

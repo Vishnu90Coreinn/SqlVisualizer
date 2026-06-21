@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Network, AlertTriangle, Download, Link, Database } from 'lucide-react';
+import { Network, AlertTriangle, Link, Database } from 'lucide-react';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
 import { getStoredTheme, applyTheme, type Theme } from './lib/themeStorage';
@@ -9,6 +9,7 @@ import ModeToggle, { type AppMode } from './components/ModeToggle';
 import SampleGrid from './components/SampleGrid';
 import DiagramCanvas, { type DiagramCanvasHandle, type ViewMode } from './components/DiagramCanvas';
 import Legend from './components/Legend';
+import ExportMenu from './components/ExportMenu';
 import { parseMultiStatement } from './sql/parser';
 import StatementTabs from './components/StatementTabs';
 import { parseDDL } from './sql/ddlParser';
@@ -160,14 +161,10 @@ export default function App() {
             </>
           )}
           <div className="w-px h-5 shrink-0" style={{ background: 'var(--color-border)' }} />
-          <button
-            onClick={() => canvasRef.current?.exportPng()}
-            title="Export PNG (Ctrl+Shift+E)"
-            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
-          >
-            <Download size={13} strokeWidth={2.25} />
-          </button>
+          <ExportMenu
+            onExportPng={() => canvasRef.current?.exportPng()}
+            onExportSvg={() => canvasRef.current?.exportSvg()}
+          />
           <button
             onClick={() => copyShareLink().catch(() => {})}
             title="Copy share link (Ctrl+Shift+C)"
