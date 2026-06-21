@@ -41,3 +41,13 @@ export function decodeUrlState(): Partial<AppUrlState> {
 export function copyShareLink(): Promise<void> {
   return navigator.clipboard.writeText(window.location.href);
 }
+
+export function isEmbedMode(): boolean {
+  return new URLSearchParams(window.location.search).get('embed') === '1';
+}
+
+export function getEmbedUrl(): string {
+  const url = new URL(window.location.href);
+  url.searchParams.set('embed', '1');
+  return url.toString();
+}

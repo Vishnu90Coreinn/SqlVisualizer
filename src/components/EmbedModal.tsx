@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { X, Copy } from 'lucide-react';
+import { getEmbedUrl } from '../lib/urlState';
 
 export default function EmbedModal({ onClose }: { onClose: () => void }) {
-  const url = window.location.href;
-  const iframeCode = `<iframe\n  src="${url}"\n  width="100%"\n  height="500"\n  frameborder="0"\n  style="border: 1px solid #28324a; border-radius: 8px;"\n></iframe>`;
+  const url = getEmbedUrl();
+  const iframeCode = `<iframe\n  src="${url}"\n  width="100%"\n  height="500"\n  frameborder="0"\n  style="border: 1px solid #28324a; border-radius: 8px;"\n  title="SQL Visualizer"\n></iframe>`;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 

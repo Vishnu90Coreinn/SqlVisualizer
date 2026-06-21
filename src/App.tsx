@@ -26,7 +26,7 @@ import { buildSchemaGraph } from './sql/schemaGraph';
 import { SAMPLE_QUERIES } from './lib/sampleQueries';
 import { DDL_SAMPLE_QUERIES } from './lib/ddlSampleQueries';
 import type { ParseResult, SchemaGraph } from './sql/types';
-import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
+import { encodeUrlState, decodeUrlState, copyShareLink, isEmbedMode } from './lib/urlState';
 import { downloadDDL } from './lib/ddlGenerator';
 import { formatSql } from './lib/sqlFormatter';
 import ComplexityBadge from './components/ComplexityBadge';
@@ -64,6 +64,7 @@ export default function App() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [panelWidth, setPanelWidth] = useState(420);
   const isDragging = useRef(false);
+  const embedMode = isEmbedMode();
   const [explainResult, setExplainResult] = useState<ExplainResult | null>(null);
   const [showExplain, setShowExplain] = useState(false);
   const [diffMode, setDiffMode] = useState(false);
@@ -222,6 +223,31 @@ export default function App() {
       canvasRef.current?.stopAnimation();
     }
   }, [view]);
+
+  // ── Embed mode — canvas only, no header/sidebar ──────────────────────────
+  if (embedMode) {
+    const embedResult = results[selectedIdx] ?? { ok: false };
+    return (
+      <div className="h-screen w-screen relative" style={{ background: 'var(--color-bg)' }}>
+        {embedResult.ok && mode === 'query' && (
+          <DiagramCanvas result={embedResult} view={view} />
+        )}
+        {mode === 'schema' && schemaGraph && (
+          <DiagramCanvas result={{ ok: true, schema: schemaGraph }} view="schema" />
+        )}
+        {/* Watermark */}
+        <a
+          href="https://sql-visualizer-theta.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-3 right-3 flex items-center gap-1 text-[9px] font-bold tracking-wider px-2 py-1 rounded-md"
+          style={{ background: 'var(--color-bg-raised)', color: 'var(--color-amber)', border: '1px solid var(--color-border)', opacity: 0.8 }}
+        >
+          SQL<span style={{ color: '#8b95ad' }}>//</span>VISUALIZER
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col">
