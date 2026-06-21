@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, FileImage, FileCode2 } from 'lucide-react';
+import { Download, FileImage, FileCode2, Share2 } from 'lucide-react';
 
 export default function ExportMenu({
   onExportPng,
   onExportSvg,
+  onExportCard,
 }: {
   onExportPng: () => void;
   onExportSvg: () => void;
+  onExportCard: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -51,6 +53,14 @@ export default function ExportMenu({
           >
             <FileCode2 size={12} strokeWidth={2} />
             Export SVG
+          </button>
+          <button
+            onClick={() => { onExportCard(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-[11px] transition-colors hover:bg-[rgba(255,255,255,0.05)]"
+            style={{ color: '#f0a93f', borderTop: '1px solid var(--color-border-soft)' }}
+          >
+            <Share2 size={12} strokeWidth={2} />
+            Share Card ✨
           </button>
         </div>
       )}

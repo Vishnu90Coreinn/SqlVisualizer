@@ -273,6 +273,7 @@ export default function App() {
           <ExportMenu
             onExportPng={() => canvasRef.current?.exportPng()}
             onExportSvg={() => canvasRef.current?.exportSvg()}
+            onExportCard={() => canvasRef.current?.exportCard(mode === 'schema' ? schemaSql : sql, mode)}
           />
           {/* Hidden file input for Load */}
           <input

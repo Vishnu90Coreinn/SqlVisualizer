@@ -12,7 +12,7 @@ import RelationNode from './nodes/RelationNode';
 import StageNode from './nodes/StageNode';
 import LaneLabelNode from './nodes/LaneLabelNode';
 import SchemaNodeComponent from './nodes/SchemaNode';
-import { exportDiagramAsPng, exportDiagramAsSvg } from '../lib/exportPng';
+import { exportDiagramAsPng, exportDiagramAsSvg, exportDiagramAsCard } from '../lib/exportPng';
 import { layoutSchemaGraph } from '../layout/schemaLayout';
 import { getCostColor, type ExplainResult } from '../lib/explainParser';
 
@@ -24,6 +24,7 @@ export interface DiagramCanvasHandle {
   fitView: () => void;
   exportPng: () => Promise<void>;
   exportSvg: () => Promise<void>;
+  exportCard: (sql: string, mode: 'query' | 'schema') => Promise<void>;
   startAnimation: () => void;
   stopAnimation: () => void;
 }
@@ -152,6 +153,9 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       },
       exportSvg: async () => {
         if (wrapperRef.current) await exportDiagramAsSvg(wrapperRef.current);
+      },
+      exportCard: async (sql, mode) => {
+        if (wrapperRef.current) await exportDiagramAsCard(wrapperRef.current, sql, mode);
       },
       startAnimation: () => setIsAnimating(true),
       stopAnimation: () => {
