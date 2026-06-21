@@ -23,11 +23,16 @@ export interface DiagramCanvasHandle {
   fitView: () => void;
   exportPng: () => Promise<void>;
   exportSvg: () => Promise<void>;
+  startAnimation: () => void;
+  stopAnimation: () => void;
 }
 
 const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode; onNodeClick?: (nodeId: string, nodeData: any) => void }>(
   ({ result, view, onNodeClick }, ref) => {
     const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(new Set());
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [activeStageId, setActiveStageId] = useState<string | null>(null);
+    const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const rfInstance = useRef<ReactFlowInstance | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +55,55 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       [result, view, collapsedLanes, toggleLane]
     );
 
+    // Reset animation when result or view changes
+    useEffect(() => {
+      setIsAnimating(false);
+      setActiveStageId(null);
+      if (animationRef.current) clearTimeout(animationRef.current);
+    }, [result, view]);
+
+    // Step through flow nodes in execution order while animating
+    useEffect(() => {
+      if (!isAnimating || view !== 'flow') return;
+
+      const flowNodes = nodes
+        .filter((n) => n.type === 'stage')
+        .sort((a, b) => ((a.data as any).order ?? 0) - ((b.data as any).order ?? 0));
+
+      if (flowNodes.length === 0) return;
+
+      let idx = 0;
+      function step() {
+        if (idx >= flowNodes.length) {
+          idx = 0; // loop
+        }
+        setActiveStageId(flowNodes[idx].id);
+        idx++;
+        animationRef.current = setTimeout(step, 600);
+      }
+      step();
+
+      return () => {
+        if (animationRef.current) clearTimeout(animationRef.current);
+        setActiveStageId(null);
+      };
+    }, [isAnimating, nodes, view]);
+
+    // Post-process nodes/edges for animation display
+    const displayNodes = useMemo(() => {
+      if (!isAnimating || view !== 'flow') return nodes;
+      return nodes.map((n) =>
+        n.type === 'stage' && n.id === activeStageId
+          ? { ...n, style: { ...n.style, filter: 'brightness(1.4)', transition: 'filter 0.3s' } }
+          : n
+      );
+    }, [nodes, isAnimating, activeStageId, view]);
+
+    const displayEdges = useMemo(() => {
+      if (!isAnimating || view !== 'flow') return edges;
+      return edges.map((e) => ({ ...e, animated: true }));
+    }, [edges, isAnimating, view]);
+
     useImperativeHandle(ref, () => ({
       fitView: () => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1 }),
       exportPng: async () => {
@@ -57,6 +111,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       },
       exportSvg: async () => {
         if (wrapperRef.current) await exportDiagramAsSvg(wrapperRef.current);
+      },
+      startAnimation: () => setIsAnimating(true),
+      stopAnimation: () => {
+        setIsAnimating(false);
+        setActiveStageId(null);
+        if (animationRef.current) clearTimeout(animationRef.current);
       },
     }));
 
@@ -66,8 +126,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       <div ref={wrapperRef} style={{ width: '100%', height: '100%' }}>
         <ReactFlow
           key={view}
-          nodes={nodes}
-          edges={edges}
+          nodes={displayNodes}
+          edges={displayEdges}
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.18, maxZoom: 1.1 }}

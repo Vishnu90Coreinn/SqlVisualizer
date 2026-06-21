@@ -44,6 +44,7 @@ export default function App() {
   const [mode, setMode] = useState<AppMode>(() => decodeUrlState().mode ?? 'query');
   const canvasRef = useRef<DiagramCanvasHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [schemaSql, setSchemaSql] = useState(DDL_SAMPLE_QUERIES[1].sql);
   const [schemaGraph, setSchemaGraph] = useState<SchemaGraph | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
@@ -183,6 +184,13 @@ export default function App() {
     setPanelData(null);
   }, [mode, view]);
 
+  useEffect(() => {
+    if (view !== 'flow') {
+      setIsAnimating(false);
+      canvasRef.current?.stopAnimation();
+    }
+  }, [view]);
+
   return (
     <div className="h-screen flex flex-col">
       <header
@@ -203,6 +211,31 @@ export default function App() {
             <>
               <div className="w-px h-5 shrink-0" style={{ background: 'var(--color-border)' }} />
               <ViewToggle view={view} onChange={setView} />
+            </>
+          )}
+          {mode === 'query' && view === 'flow' && (
+            <>
+              <div className="w-px h-5 shrink-0" style={{ background: 'var(--color-border)' }} />
+              <button
+                onClick={() => {
+                  if (isAnimating) {
+                    canvasRef.current?.stopAnimation();
+                    setIsAnimating(false);
+                  } else {
+                    canvasRef.current?.startAnimation();
+                    setIsAnimating(true);
+                  }
+                }}
+                title={isAnimating ? 'Stop animation' : 'Animate execution flow'}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border transition-colors"
+                style={{
+                  borderColor: isAnimating ? '#f0a93f' : 'var(--color-border)',
+                  color: isAnimating ? '#f0a93f' : 'var(--color-text-dim)',
+                  background: 'var(--color-bg-raised)',
+                }}
+              >
+                {isAnimating ? '⏹ Stop' : '▶ Play'}
+              </button>
             </>
           )}
           <div className="w-px h-5 shrink-0" style={{ background: 'var(--color-border)' }} />
