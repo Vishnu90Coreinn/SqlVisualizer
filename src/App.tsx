@@ -40,6 +40,7 @@ import ExplainImportModal from './components/ExplainImportModal';
 import type { ExplainResult } from './lib/explainParser';
 import QueryDiffPanel from './components/QueryDiffPanel';
 import CommandPalette, { buildCommands } from './components/CommandPalette';
+import OnboardingBeacons from './components/OnboardingBeacons';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -276,7 +277,7 @@ export default function App() {
           {mode === 'query' && result.flow && (
             <>
               <div className="w-px h-5 shrink-0" style={{ background: 'var(--color-border)' }} />
-              <ViewToggle view={view} onChange={setView} />
+              <div data-beacon="view-toggle"><ViewToggle view={view} onChange={setView} /></div>
             </>
           )}
           {mode === 'query' && view === 'flow' && (
@@ -340,6 +341,7 @@ export default function App() {
           <button
             onClick={() => setShowHelp((v) => !v)}
             title="Features & shortcuts"
+            data-beacon="help"
             className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
             style={{
               borderColor: showHelp ? '#f0a93f' : 'var(--color-border)',
@@ -400,7 +402,7 @@ export default function App() {
               )}
             </div>
           )}
-          <div className="flex-1 flex flex-col min-h-[160px] gap-1">
+          <div className="flex-1 flex flex-col min-h-[160px] gap-1" data-beacon="editor">
             {/* Editor micro-toolbar */}
             <div className="flex items-center justify-end gap-1 shrink-0">
               {mode === 'query' && (
@@ -570,6 +572,7 @@ export default function App() {
         </section>
       </main>
       {showEmbed && <EmbedModal onClose={() => setShowEmbed(false)} />}
+      <OnboardingBeacons />
       {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
       {showPalette && (
         <CommandPalette
