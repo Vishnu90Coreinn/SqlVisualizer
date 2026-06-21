@@ -16,12 +16,17 @@ export default function Legend({ view }: { view: ViewMode }) {
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-1 px-0.5 pt-1 pb-0.5">
       {view === 'relationship'
-        ? ROLE_ORDER.map((role) => (
+        ? [...ROLE_ORDER.map((role) => (
             <span key={role} className="flex items-center gap-1 text-[9.5px]" style={{ color: 'var(--color-text-faint)' }}>
               <span className="rounded-full" style={{ width: 5, height: 5, background: ROLE_COLOR[role] }} />
               {ROLE_LABEL[role]}
             </span>
-          ))
+          )), (
+            <span key="index-hint" className="flex items-center gap-1 text-[9.5px]" style={{ color: 'var(--color-text-faint)' }}>
+              <span className="text-[8px]" style={{ color: '#f0a93f', opacity: 0.7 }}>⚡</span>
+              INDEX HINT
+            </span>
+          )]
         : STAGE_ENTRIES.map((s) => (
             <span key={s.key} className="flex items-center gap-1 text-[9.5px]" style={{ color: 'var(--color-text-faint)' }}>
               <span className="rounded-full" style={{ width: 5, height: 5, background: STAGE_COLOR[s.key] }} />
