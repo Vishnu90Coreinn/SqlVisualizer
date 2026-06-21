@@ -50,6 +50,15 @@ export default function RelationNode({ data, selected }: NodeProps & { data: Rel
               <span className="text-[11px] truncate flex-1" style={{ color: 'var(--color-text-dim)' }}>
                 {col.name}
               </span>
+              {(col.roles.has('join') || col.roles.has('filter')) && (
+                <span
+                  className="text-[8px] shrink-0"
+                  style={{ color: '#f0a93f', opacity: 0.7 }}
+                  title="Consider adding an index — this column is used in a JOIN or WHERE clause"
+                >
+                  ⚡
+                </span>
+              )}
             </div>
           );
         })}
