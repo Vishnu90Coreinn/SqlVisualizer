@@ -1,6 +1,6 @@
 import { useMemo, forwardRef, useImperativeHandle, useRef, useState, useCallback, useEffect } from 'react';
 import {
-  ReactFlow, Background, Controls, MiniMap, BackgroundVariant,
+  ReactFlow, Background, MiniMap, BackgroundVariant,
   MarkerType, applyNodeChanges, type Node, type Edge, type NodeChange, type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -13,6 +13,7 @@ import StageNode from './nodes/StageNode';
 import LaneLabelNode from './nodes/LaneLabelNode';
 import SchemaNodeComponent from './nodes/SchemaNode';
 import { exportDiagramAsPng, exportDiagramAsSvg, exportDiagramAsCard } from '../lib/exportPng';
+import DiagramToolbar from './DiagramToolbar';
 import { layoutSchemaGraph } from '../layout/schemaLayout';
 import { getCostColor, type ExplainResult } from '../lib/explainParser';
 
@@ -246,7 +247,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
           }}
         >
           <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2436" />
-          <Controls showInteractive={false} />
           <MiniMap
             pannable
             zoomable
@@ -260,6 +260,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
             }}
           />
         </ReactFlow>
+        <DiagramToolbar
+          onZoomIn={() => rfInstance.current?.zoomIn({ duration: 200 })}
+          onZoomOut={() => rfInstance.current?.zoomOut({ duration: 200 })}
+          onFitView={() => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1, duration: 300 })}
+          onExport={async () => { if (wrapperRef.current) await exportDiagramAsPng(wrapperRef.current); }}
+        />
       </div>
     );
   }
