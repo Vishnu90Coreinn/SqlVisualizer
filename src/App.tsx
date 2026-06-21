@@ -41,6 +41,8 @@ import type { ExplainResult } from './lib/explainParser';
 import QueryDiffPanel from './components/QueryDiffPanel';
 import CommandPalette, { buildCommands } from './components/CommandPalette';
 import OnboardingBeacons from './components/OnboardingBeacons';
+import DialectConverterDropdown from './components/DialectConverterDropdown';
+import { convertDialect } from './lib/dialectConverter';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -417,6 +419,15 @@ export default function App() {
                     Format
                   </button>
                   <QueryHistoryDropdown onSelect={setSql} />
+                  <DialectConverterDropdown
+                    currentDialect={database}
+                    onConvert={(targetDialect) => {
+                      const { sql: converted, warnings } = convertDialect(sql, database, targetDialect);
+                      setSql(converted);
+                      setDatabase(targetDialect);
+                      if (warnings.length > 0) console.info('Dialect conversion notes:', warnings);
+                    }}
+                  />
                   <button
                     onClick={() => { setQueryDiffMode((v) => !v); setDiffBefore(null); setDiffAfter(null); }}
                     title="Compare two queries side by side"
