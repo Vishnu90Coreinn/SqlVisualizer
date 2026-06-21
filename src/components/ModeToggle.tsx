@@ -19,13 +19,13 @@ export default function ModeToggle({ mode, onChange }: { mode: AppMode; onChange
           <button
             key={key}
             onClick={() => onChange(key)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11.5px] font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[12px] font-bold tracking-wide transition-colors"
             style={{
               color: active ? '#0a0e16' : 'var(--color-text-dim)',
               background: active ? 'var(--color-amber)' : 'transparent',
             }}
           >
-            <Icon size={13} strokeWidth={2.25} />
+            <Icon size={13} strokeWidth={2.5} />
             {label}
           </button>
         );
