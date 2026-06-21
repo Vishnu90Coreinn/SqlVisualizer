@@ -36,6 +36,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
     const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(new Set());
     const [activeColumn, setActiveColumn] = useState<{ nodeId: string; col: string } | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [bgStyle, setBgStyle] = useState<'dots' | 'lines' | 'none'>('dots');
     const [isAnimating, setIsAnimating] = useState(false);
     const [activeStageId, setActiveStageId] = useState<string | null>(null);
     const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -259,7 +260,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
             rfInstance.current?.fitView({ nodes: [node], padding: 0.35, maxZoom: 1.5, duration: 400 });
           }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2436" />
+          {bgStyle === 'dots' && <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2436" />}
+          {bgStyle === 'lines' && <Background variant={BackgroundVariant.Lines} gap={28} size={1} color="#1c2436" />}
           <MiniMap
             pannable
             zoomable
@@ -280,6 +282,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
             onZoomOut={() => rfInstance.current?.zoomOut({ duration: 200 })}
             onFitView={() => rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.1, duration: 300 })}
             onExport={async () => { if (wrapperRef.current) await exportDiagramAsPng(wrapperRef.current); }}
+            bgStyle={bgStyle}
+            onToggleBg={() => setBgStyle((b) => b === 'dots' ? 'lines' : b === 'lines' ? 'none' : 'dots')}
           />
         </div>
       </div>
