@@ -178,10 +178,15 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
           fitViewOptions={{ padding: 0.18, maxZoom: 1.1 }}
           minZoom={0.15}
           maxZoom={2}
+          snapToGrid
+          snapGrid={[16, 16]}
           proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{ type: 'smoothstep' }}
           onInit={(instance) => { rfInstance.current = instance; }}
           onNodeClick={onNodeClick ? (_, node) => onNodeClick(node.id, node.data) : undefined}
+          onNodeDoubleClick={(_, node) => {
+            rfInstance.current?.fitView({ nodes: [node], padding: 0.35, maxZoom: 1.5, duration: 400 });
+          }}
         >
           <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2436" />
           <Controls showInteractive={false} />
