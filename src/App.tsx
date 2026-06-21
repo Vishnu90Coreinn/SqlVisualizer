@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Network, AlertTriangle, Link, Database, Save, FolderOpen, Code2, FileDown } from 'lucide-react';
+import { Network, AlertTriangle, Database, FileDown } from 'lucide-react';
+import HeaderActionsMenu from './components/HeaderActionsMenu';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
 import EmbedModal from './components/EmbedModal';
@@ -267,14 +268,6 @@ export default function App() {
             onExportPng={() => canvasRef.current?.exportPng()}
             onExportSvg={() => canvasRef.current?.exportSvg()}
           />
-          <button
-            onClick={() => copyShareLink().catch(() => {})}
-            title="Copy share link (Ctrl+Shift+C)"
-            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
-          >
-            <Link size={13} strokeWidth={2.25} />
-          </button>
           {/* Hidden file input for Load */}
           <input
             ref={fileInputRef}
@@ -283,30 +276,12 @@ export default function App() {
             className="hidden"
             onChange={handleLoad}
           />
-          <button
-            onClick={handleSave}
-            title="Save workspace as JSON"
-            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
-          >
-            <Save size={13} strokeWidth={2.25} />
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            title="Load workspace from JSON"
-            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
-          >
-            <FolderOpen size={13} strokeWidth={2.25} />
-          </button>
-          <button
-            onClick={() => setShowEmbed(true)}
-            title="Get embed code"
-            className="flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
-          >
-            <Code2 size={13} strokeWidth={2.25} />
-          </button>
+          <HeaderActionsMenu
+            onShare={() => copyShareLink().catch(() => {})}
+            onSave={handleSave}
+            onLoad={() => fileInputRef.current?.click()}
+            onEmbed={() => setShowEmbed(true)}
+          />
           <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
         </div>
       </header>
