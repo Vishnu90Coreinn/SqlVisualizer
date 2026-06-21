@@ -53,23 +53,44 @@ export default function ExplainImportModal({
           </button>
         </div>
         <div className="p-4 flex flex-col gap-3">
-          <p className="text-[11px]" style={{ color: 'var(--color-text-faint)' }}>
-            Run <code className="px-1 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>EXPLAIN (FORMAT JSON) SELECT ...</code> in PostgreSQL or <code className="px-1 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>EXPLAIN FORMAT=JSON SELECT ...</code> in MySQL and paste the output below.
-          </p>
-          <textarea
-            value={text}
-            onChange={(e) => { setText(e.target.value); setError(null); }}
-            placeholder='[{"Plan": {"Node Type": "Seq Scan", ...}}]'
-            rows={8}
-            className="w-full rounded-lg px-3 py-2 text-[10.5px] font-mono resize-none outline-none border"
-            style={{
-              borderColor: error ? 'var(--color-rose)' : 'var(--color-border)',
-              background: 'var(--color-bg-raised)',
-              color: 'var(--color-text-dim)',
-            }}
-          />
+          {/* Step 1 */}
+          <div className="rounded-lg border px-3 py-2.5 flex flex-col gap-1.5" style={{ borderColor: 'var(--color-border-soft)', background: 'var(--color-bg-raised)' }}>
+            <span className="text-[9.5px] font-bold tracking-wider" style={{ color: 'var(--color-amber)' }}>STEP 1 — Run this in your database</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px]" style={{ color: 'var(--color-text-faint)' }}>PostgreSQL:</span>
+              <code className="text-[10px] px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-dim)' }}>
+                EXPLAIN (FORMAT JSON, ANALYZE) SELECT ...
+              </code>
+              <span className="text-[9px] mt-1" style={{ color: 'var(--color-text-faint)' }}>MySQL:</span>
+              <code className="text-[10px] px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-dim)' }}>
+                EXPLAIN FORMAT=JSON SELECT ...
+              </code>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div>
+            <span className="text-[9.5px] font-bold tracking-wider block mb-1.5" style={{ color: 'var(--color-amber)' }}>STEP 2 — Paste the JSON output below (not your SQL)</span>
+            <p className="text-[10.5px] mb-2" style={{ color: 'var(--color-text-faint)' }}>
+              The output starts with <code className="px-1 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>[{`{`}</code> or <code className="px-1 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>{`{`}</code> — it is <strong style={{ color: 'var(--color-rose)' }}>not</strong> your SQL query.
+            </p>
+            <textarea
+              value={text}
+              onChange={(e) => { setText(e.target.value); setError(null); }}
+              placeholder={'[\n  {\n    "Plan": {\n      "Node Type": "Hash Join",\n      "Total Cost": 145.23,\n      ...\n    }\n  }\n]'}
+              rows={7}
+              className="w-full rounded-lg px-3 py-2 text-[10.5px] font-mono resize-none outline-none border"
+              style={{
+                borderColor: error ? 'var(--color-rose)' : 'var(--color-border)',
+                background: 'var(--color-bg-raised)',
+                color: 'var(--color-text-dim)',
+              }}
+            />
+          </div>
           {error && (
-            <p className="text-[10.5px]" style={{ color: 'var(--color-rose)' }}>{error}</p>
+            <div className="rounded-lg border px-3 py-2 text-[10.5px]" style={{ borderColor: 'var(--color-rose)', background: 'rgba(240,112,140,0.08)', color: 'var(--color-rose)' }}>
+              ⚠ {error} Make sure you're pasting the JSON output from your database, not the SQL query itself.
+            </div>
           )}
           <button
             onClick={handleImport}
