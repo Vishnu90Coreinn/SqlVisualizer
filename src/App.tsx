@@ -10,6 +10,7 @@ import SampleGrid from './components/SampleGrid';
 import DiagramCanvas, { type DiagramCanvasHandle, type ViewMode } from './components/DiagramCanvas';
 import Legend from './components/Legend';
 import ExportMenu from './components/ExportMenu';
+import DiagramTextExportMenu from './components/DiagramTextExportMenu';
 import { parseMultiStatement } from './sql/parser';
 import StatementTabs from './components/StatementTabs';
 import { parseDDL } from './sql/ddlParser';
@@ -192,6 +193,11 @@ export default function App() {
           {mode === 'query' && (
             <div className="flex justify-end">
               <QueryHistoryDropdown onSelect={setSql} />
+            </div>
+          )}
+          {mode === 'schema' && schemaGraph && (
+            <div className="flex justify-end">
+              <DiagramTextExportMenu graph={schemaGraph} />
             </div>
           )}
           <div className="flex-1 min-h-[160px]">
