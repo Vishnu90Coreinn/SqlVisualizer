@@ -1,7 +1,7 @@
 import { useMemo, forwardRef, useImperativeHandle, useRef, useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow, Background, Controls, MiniMap, BackgroundVariant,
-  MarkerType, type Node, type Edge, type ReactFlowInstance,
+  MarkerType, applyNodeChanges, type Node, type Edge, type NodeChange, type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { ParseResult } from '../sql/types';
@@ -52,10 +52,22 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       });
     }, []);
 
-    const { nodes, edges } = useMemo(
+    const { nodes: layoutNodes, edges } = useMemo(
       () => buildGraph(result, view, collapsedLanes, toggleLane),
       [result, view, collapsedLanes, toggleLane]
     );
+
+    // Local node state so drag positions persist across re-renders
+    const [nodes, setNodes] = useState<Node[]>(layoutNodes);
+
+    // Sync layout nodes whenever the parsed result or view changes
+    useEffect(() => {
+      setNodes(layoutNodes);
+    }, [layoutNodes]);
+
+    const onNodesChange = useCallback((changes: NodeChange[]) => {
+      setNodes((nds) => applyNodeChanges(changes, nds));
+    }, []);
 
     // Reset animation when result or view changes
     useEffect(() => {
@@ -184,6 +196,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
           snapGrid={[16, 16]}
           proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{ type: 'smoothstep' }}
+          onNodesChange={onNodesChange}
           onInit={(instance) => { rfInstance.current = instance; }}
           onNodeClick={onNodeClick ? (_, node) => onNodeClick(node.id, node.data) : undefined}
           onNodeDoubleClick={(_, node) => {
