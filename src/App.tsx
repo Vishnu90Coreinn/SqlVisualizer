@@ -296,13 +296,7 @@ export default function App() {
             mode={mode}
             onDatabaseChange={setDatabase}
             onPickSample={mode === 'schema' ? setSchemaSql : setSql}
-            onFormat={handleFormat}
           />
-          {mode === 'query' && (
-            <div className="flex justify-end">
-              <QueryHistoryDropdown onSelect={setSql} />
-            </div>
-          )}
           {mode === 'schema' && (
             <div className="flex items-center justify-between gap-2">
               <button
@@ -332,7 +326,24 @@ export default function App() {
               )}
             </div>
           )}
-          <div className="flex-1 min-h-[160px]">
+          <div className="flex-1 flex flex-col min-h-[160px] gap-1">
+            {/* Editor micro-toolbar */}
+            <div className="flex items-center justify-end gap-1 shrink-0">
+              {mode === 'query' && (
+                <>
+                  <button
+                    onClick={handleFormat}
+                    title="Format SQL (Alt+Shift+F)"
+                    className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-faint)', background: 'transparent' }}
+                  >
+                    <span className="font-mono text-[11px]">{'{}'}</span>
+                    Format
+                  </button>
+                  <QueryHistoryDropdown onSelect={setSql} />
+                </>
+              )}
+            </div>
             {mode === 'schema' && diffMode ? (
               <SchemaDiffPanel database={database} onDiffResult={setDiffResult} />
             ) : (
