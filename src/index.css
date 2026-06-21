@@ -24,6 +24,48 @@
   --color-slate: #7c879f;
 }
 
+[data-theme="light"] {
+  --color-bg: #f5f7fa;
+  --color-bg-raised: #ffffff;
+  --color-surface: #eef1f6;
+  --color-surface-2: #e4e8f0;
+  --color-border: #d0d6e3;
+  --color-border-soft: #e4e8f0;
+  --color-text: #1a2035;
+  --color-text-dim: #4a5370;
+  --color-text-faint: #8b95ad;
+  --color-amber: #c97f00;
+  --color-amber-dim: #a86a00;
+  --color-cyan: #0891b2;
+  --color-violet: #7c3aed;
+  --color-rose: #e11d48;
+  --color-emerald: #059669;
+  --color-slate: #64748b;
+}
+
+[data-theme="light"] body {
+  background-image:
+    linear-gradient(var(--color-border-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border-soft) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+}
+
+[data-theme="light"] .react-flow__controls-button {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-soft);
+  color: var(--color-text-dim);
+}
+
+[data-theme="light"] .react-flow__controls-button:hover {
+  background: var(--color-surface-2);
+  color: var(--color-amber);
+}
+
+[data-theme="light"] .react-flow__minimap {
+  background: var(--color-surface) !important;
+}
+
 * {
   box-sizing: border-box;
 }
