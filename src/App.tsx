@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Network, AlertTriangle, Link, Database, Save, FolderOpen, Code2 } from 'lucide-react';
+import { Network, AlertTriangle, Link, Database, Save, FolderOpen, Code2, FileDown } from 'lucide-react';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
 import EmbedModal from './components/EmbedModal';
@@ -19,6 +19,7 @@ import { SAMPLE_QUERIES } from './lib/sampleQueries';
 import { DDL_SAMPLE_QUERIES } from './lib/ddlSampleQueries';
 import type { ParseResult, SchemaGraph } from './sql/types';
 import { encodeUrlState, decodeUrlState, copyShareLink } from './lib/urlState';
+import { downloadDDL } from './lib/ddlGenerator';
 import { formatSql } from './lib/sqlFormatter';
 import ComplexityBadge from './components/ComplexityBadge';
 import { explainError } from './lib/errorExplanations';
@@ -248,6 +249,19 @@ export default function App() {
           {mode === 'query' && (
             <div className="flex justify-end">
               <QueryHistoryDropdown onSelect={setSql} />
+            </div>
+          )}
+          {mode === 'schema' && schemaGraph && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => downloadDDL(schemaGraph)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold border shrink-0 transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
+                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+                title="Download as .sql file"
+              >
+                <FileDown size={12} strokeWidth={2.25} />
+                Export DDL
+              </button>
             </div>
           )}
           <div className="flex-1 min-h-[160px]">
