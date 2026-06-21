@@ -23,6 +23,43 @@ const BASIC_SETUP = {
 } as const;
 
 // CSS variables don't resolve inside CodeMirror's injected StyleModule, so hex values are used directly.
+const lightTheme = EditorView.theme(
+  {
+    '&': { height: '100%', background: '#ffffff' },
+    '.cm-scroller': {
+      fontFamily: "'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace",
+      fontSize: '12px',
+      lineHeight: '20px',
+      overflow: 'auto',
+    },
+    '.cm-content': { padding: '12px 12px 12px 0', caretColor: '#c97f00' },
+    '.cm-line': { padding: '0 12px' },
+    '.cm-cursor': { borderLeftColor: '#c97f00' },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
+      background: 'rgba(201,127,0,0.15) !important',
+    },
+    '.cm-activeLine': { background: 'rgba(0,0,0,0.04)' },
+    '.cm-gutters': {
+      background: '#eef1f6',
+      borderRight: '1px solid #d0d6e3',
+      color: '#8b95ad',
+      minWidth: '36px',
+    },
+    '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px' },
+    '.cm-activeLineGutter': {
+      background: '#e4e8f0',
+      color: '#4a5370',
+    },
+    '.cm-error-line': { background: 'rgba(225,29,72,0.08)' },
+    '.cm-matchingBracket': {
+      background: 'rgba(201,127,0,0.15)',
+      color: '#c97f00 !important',
+      outline: 'none',
+    },
+  },
+  { dark: false }
+);
+
 const baseTheme = EditorView.theme(
   {
     '&': { height: '100%', background: '#0f1420' },
@@ -79,19 +116,21 @@ export default function SqlEditor({
   onChange,
   errorLine,
   dialect,
+  theme,
 }: {
   value: string;
   onChange: (v: string) => void;
   errorLine?: number;
   dialect?: string;
+  theme?: 'dark' | 'light';
 }) {
   const extensions = useMemo(
     () => [
       sql({ dialect: dialect ? dialectMap[dialect] : undefined }),
-      baseTheme,
+      theme === 'light' ? lightTheme : baseTheme,
       errorLineExt(errorLine),
     ],
-    [errorLine, dialect]
+    [errorLine, dialect, theme]
   );
 
   return (
@@ -99,7 +138,7 @@ export default function SqlEditor({
       value={value}
       onChange={(v) => onChange(v)}
       extensions={extensions}
-      theme="dark"
+      theme={theme === 'light' ? 'light' : 'dark'}
       height="100%"
       placeholder="Paste a SQL query here..."
       basicSetup={BASIC_SETUP}
@@ -107,7 +146,7 @@ export default function SqlEditor({
         height: '100%',
         overflow: 'hidden',
         borderRadius: '8px',
-        border: '1px solid #28324a',
+        border: '1px solid var(--color-border)',
       }}
     />
   );

@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { Network, AlertTriangle, Download, Link, Database } from 'lucide-react';
 import SqlEditor from './components/SqlEditor';
+import ThemeToggle from './components/ThemeToggle';
+import { getStoredTheme, applyTheme, type Theme } from './lib/themeStorage';
 import Toolbar from './components/Toolbar';
 import ViewToggle from './components/ViewToggle';
 import ModeToggle, { type AppMode } from './components/ModeToggle';
@@ -20,6 +22,11 @@ import ComplexityBadge from './components/ComplexityBadge';
 import { explainError } from './lib/errorExplanations';
 
 export default function App() {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = getStoredTheme();
+    applyTheme(stored); // apply immediately on mount
+    return stored;
+  });
   const [sql, setSql] = useState(() => decodeUrlState().sql ?? '');
   const [database, setDatabase] = useState(() => decodeUrlState().dialect ?? 'PostgreSQL');
   const [view, setView] = useState<ViewMode>('relationship');
@@ -61,6 +68,12 @@ export default function App() {
   useEffect(() => {
     encodeUrlState({ mode, dialect: database, sql });
   }, [mode, database, sql]);
+
+  function handleThemeToggle() {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    setTheme(next);
+  }
 
   function handleFormat() {
     const currentSql = mode === 'schema' ? schemaSql : sql;
@@ -155,6 +168,7 @@ export default function App() {
           >
             <Link size={13} strokeWidth={2.25} />
           </button>
+          <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
         </div>
       </header>
 
@@ -176,6 +190,7 @@ export default function App() {
               onChange={mode === 'schema' ? setSchemaSql : setSql}
               errorLine={mode === 'schema' ? undefined : result.errorPosition?.line}
               dialect={database}
+              theme={theme}
             />
           </div>
           {mode === 'query' && !result.ok && result.error && (
