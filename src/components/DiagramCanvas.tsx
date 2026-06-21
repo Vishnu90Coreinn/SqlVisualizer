@@ -25,8 +25,8 @@ export interface DiagramCanvasHandle {
   exportSvg: () => Promise<void>;
 }
 
-const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode }>(
-  ({ result, view }, ref) => {
+const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; view: ViewMode; onNodeClick?: (nodeId: string, nodeData: any) => void }>(
+  ({ result, view, onNodeClick }, ref) => {
     const { nodes, edges } = useMemo(() => buildGraph(result, view), [result, view]);
     const rfInstance = useRef<ReactFlowInstance | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -57,6 +57,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
           proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{ type: 'smoothstep' }}
           onInit={(instance) => { rfInstance.current = instance; }}
+          onNodeClick={onNodeClick ? (_, node) => onNodeClick(node.id, node.data) : undefined}
         >
           <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2436" />
           <Controls showInteractive={false} />

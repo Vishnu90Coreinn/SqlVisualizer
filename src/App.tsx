@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Network, AlertTriangle, Link, Database, Save, FolderOpen, Code2, FileDown } from 'lucide-react';
 import SqlEditor from './components/SqlEditor';
 import ThemeToggle from './components/ThemeToggle';
@@ -9,6 +9,8 @@ import ViewToggle from './components/ViewToggle';
 import ModeToggle, { type AppMode } from './components/ModeToggle';
 import SampleGrid from './components/SampleGrid';
 import DiagramCanvas, { type DiagramCanvasHandle, type ViewMode } from './components/DiagramCanvas';
+import NodeDetailPanel from './components/NodeDetailPanel';
+import type { RelNode, SchemaNode } from './sql/types';
 import Legend from './components/Legend';
 import ExportMenu from './components/ExportMenu';
 import DiagramTextExportMenu from './components/DiagramTextExportMenu';
@@ -46,6 +48,19 @@ export default function App() {
   const [schemaGraph, setSchemaGraph] = useState<SchemaGraph | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
+  const [panelData, setPanelData] = useState<
+    | { type: 'relation'; node: RelNode }
+    | { type: 'schema'; node: SchemaNode }
+    | null
+  >(null);
+
+  const handleNodeClick = useCallback((_id: string, data: any) => {
+    if (data.tableName) {
+      setPanelData({ type: 'schema', node: data as SchemaNode });
+    } else if (data.label) {
+      setPanelData({ type: 'relation', node: data as RelNode });
+    }
+  }, []);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -163,6 +178,10 @@ export default function App() {
       addToHistory(sql, database);
     }
   }, [result]);
+
+  useEffect(() => {
+    setPanelData(null);
+  }, [mode, view]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -324,6 +343,7 @@ export default function App() {
                   ref={canvasRef}
                   result={{ ok: true, schema: schemaGraph }}
                   view="schema"
+                  onNodeClick={handleNodeClick}
                 />
               ) : (
                 <SchemaEmptyState error={schemaError} />
@@ -335,9 +355,12 @@ export default function App() {
                 onSelect={setSql}
               />
             ) : showCanvas ? (
-              <DiagramCanvas ref={canvasRef} result={result} view={view} />
+              <DiagramCanvas ref={canvasRef} result={result} view={view} onNodeClick={handleNodeClick} />
             ) : (
               <EmptyState hasError={!result.ok && !!result.error} />
+            )}
+            {panelData && (
+              <NodeDetailPanel data={panelData} onClose={() => setPanelData(null)} />
             )}
           </div>
         </section>
