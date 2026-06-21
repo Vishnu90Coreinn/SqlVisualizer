@@ -41,6 +41,7 @@ import type { ExplainResult } from './lib/explainParser';
 import QueryDiffPanel from './components/QueryDiffPanel';
 import CommandPalette, { buildCommands } from './components/CommandPalette';
 import OnboardingBeacons from './components/OnboardingBeacons';
+import DiagramStatusBar from './components/DiagramStatusBar';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -567,6 +568,9 @@ export default function App() {
             )}
             {panelData && (
               <NodeDetailPanel data={panelData} onClose={() => setPanelData(null)} />
+            )}
+            {mode === 'query' && showCanvas && !queryDiffMode && (
+              <DiagramStatusBar result={result} view={view} />
             )}
           </div>
         </section>
