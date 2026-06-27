@@ -483,9 +483,9 @@ export default function App() {
               />
             )}
           </div>
-          {mode === 'query' && !result.ok && result.error && (
+          {mode === 'query' && !result.ok && result.error && sql.trim() && (
             <div
-              className="flex flex-col gap-1 rounded-lg border px-3 py-2 text-[11.5px] fade-up"
+              className="flex flex-col gap-1.5 rounded-lg border px-3 py-2 text-[11.5px] fade-up"
               style={{ borderColor: 'var(--color-rose)', background: 'rgba(240,112,140,0.08)', color: 'var(--color-rose)' }}
             >
               <div className="flex items-start gap-2">
@@ -495,6 +495,14 @@ export default function App() {
               {explainError(result.error) && (
                 <span className="text-[10.5px] pl-5 opacity-75">{explainError(result.error)}</span>
               )}
+              <button
+                onClick={handleFormat}
+                className="flex items-center gap-1.5 self-start ml-5 mt-0.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors hover:opacity-90"
+                style={{ borderColor: '#f0a93f', color: '#f0a93f', background: 'rgba(240,169,63,0.12)' }}
+              >
+                <span className="font-mono">{'{}'}</span>
+                Try auto-formatting — it may fix this
+              </button>
             </div>
           )}
           {mode === 'schema' && schemaError && (
