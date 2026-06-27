@@ -9,7 +9,7 @@ export function encodeUrlState(state: AppUrlState): void {
   params.set('mode', state.mode);
   params.set('dialect', state.dialect);
   try {
-    params.set('q', btoa(encodeURIComponent(state.sql)));
+    params.set('q', btoa(unescape(encodeURIComponent(state.sql))));
   } catch {
     // unencodable characters; skip updating q param
   }
@@ -29,9 +29,10 @@ export function decodeUrlState(): Partial<AppUrlState> {
   const q = params.get('q');
   if (q) {
     try {
-      out.sql = decodeURIComponent(atob(q));
+      out.sql = decodeURIComponent(escape(atob(q)));
     } catch {
-      // invalid base64 — ignore, fall back to default
+      // legacy format used double-encoding: btoa(encodeURIComponent(sql))
+      try { out.sql = decodeURIComponent(atob(q)); } catch { /* ignore */ }
     }
   }
 
