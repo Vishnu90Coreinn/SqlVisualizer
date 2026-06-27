@@ -38,9 +38,9 @@ function buildResultNode(
   const fromList: any[] = finalAst.from || [];
   const addedSources = new Set<string>();
   for (const entry of fromList) {
-    if (entry.expr?.ast) continue; // skip derived tables
-    const tname = entry.table || entry.name?.value || entry.name;
-    if (typeof tname !== 'string') continue;
+    if (isDerivedTable(entry)) continue;
+    const tname = fromEntryName(entry);
+    if (!tname) continue;
     const sourceId =
       nameToId.get(`named:${tname.toLowerCase()}`) ??
       nameToId.get(`sub:${tname.toLowerCase()}`);
