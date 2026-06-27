@@ -87,7 +87,7 @@ export default function App() {
   const handleNodeClick = useCallback((_id: string, data: any) => {
     if (data.tableName) {
       setPanelData({ type: 'schema', node: data as SchemaNode });
-    } else if (data.label) {
+    } else if (data.kind && Array.isArray(data.columns)) {
       setPanelData({ type: 'relation', node: data as RelNode });
     }
   }, []);
