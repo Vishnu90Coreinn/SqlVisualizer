@@ -15,7 +15,7 @@ export default function NodeDetailPanel({
 }) {
   return (
     <div
-      className="absolute top-0 right-0 h-full w-72 border-l flex flex-col z-20 shadow-2xl"
+      className="w-72 shrink-0 border-l flex flex-col shadow-2xl"
       style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
     >
       {/* Header */}

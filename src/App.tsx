@@ -360,8 +360,8 @@ export default function App() {
 
       <main className="flex-1 flex flex-col lg:flex-row min-h-0">
         <section
-          className="flex flex-col gap-2 p-3 shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px]"
-          style={{ borderColor: 'var(--color-border)', width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? panelWidth : undefined }}
+          className="flex flex-col gap-2 p-3 shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px] overflow-hidden"
+          style={{ borderColor: 'var(--color-border)', width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? panelWidth : undefined, minWidth: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 280 : undefined }}
         >
           <Toolbar
             database={database}
@@ -547,57 +547,59 @@ export default function App() {
               onSelect={setSelectedIdx}
             />
           )}
-          <div className="flex-1 relative">
-            {mode === 'query' && queryDiffMode ? (
-              /* Query diff — two diagrams side by side */
-              <div className="absolute inset-0 flex">
-                <div className="flex-1 relative border-r" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="absolute top-2 left-2 z-10 text-[9px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(240,112,140,0.15)', color: '#f0708c' }}>BEFORE</div>
-                  {diffBefore?.ok
-                    ? <DiagramCanvas result={diffBefore} view={view} />
-                    : <div className="absolute inset-0 flex items-center justify-center text-[11px]" style={{ color: 'var(--color-text-faint)' }}>Paste "before" query and click Compare</div>}
+          <div className="flex-1 flex min-h-0">
+            <div className="flex-1 relative">
+              {mode === 'query' && queryDiffMode ? (
+                /* Query diff — two diagrams side by side */
+                <div className="absolute inset-0 flex">
+                  <div className="flex-1 relative border-r" style={{ borderColor: 'var(--color-border)' }}>
+                    <div className="absolute top-2 left-2 z-10 text-[9px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(240,112,140,0.15)', color: '#f0708c' }}>BEFORE</div>
+                    {diffBefore?.ok
+                      ? <DiagramCanvas result={diffBefore} view={view} />
+                      : <div className="absolute inset-0 flex items-center justify-center text-[11px]" style={{ color: 'var(--color-text-faint)' }}>Paste "before" query and click Compare</div>}
+                  </div>
+                  <div className="flex-1 relative">
+                    <div className="absolute top-2 left-2 z-10 text-[9px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(95,216,150,0.15)', color: '#5fd896' }}>AFTER</div>
+                    {diffAfter?.ok
+                      ? <DiagramCanvas result={diffAfter} view={view} />
+                      : <div className="absolute inset-0 flex items-center justify-center text-[11px]" style={{ color: 'var(--color-text-faint)' }}>Paste "after" query and click Compare</div>}
+                  </div>
                 </div>
-                <div className="flex-1 relative">
-                  <div className="absolute top-2 left-2 z-10 text-[9px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(95,216,150,0.15)', color: '#5fd896' }}>AFTER</div>
-                  {diffAfter?.ok
-                    ? <DiagramCanvas result={diffAfter} view={view} />
-                    : <div className="absolute inset-0 flex items-center justify-center text-[11px]" style={{ color: 'var(--color-text-faint)' }}>Paste "after" query and click Compare</div>}
-                </div>
-              </div>
-            ) : null}
-            {!queryDiffMode && mode === 'query' && showCanvas && (
-              <ComplexityBadge result={result} />
-            )}
-            {mode === 'schema' && diffMode ? (
-              <SchemaDiffCanvas diffResult={diffResult} />
-            ) : mode === 'schema' ? (
-              schemaGraph ? (
-                <DiagramCanvas
-                  ref={canvasRef}
-                  result={{ ok: true, schema: schemaGraph }}
-                  view="schema"
-                  onNodeClick={handleNodeClick}
+              ) : null}
+              {!queryDiffMode && mode === 'query' && showCanvas && (
+                <ComplexityBadge result={result} />
+              )}
+              {mode === 'schema' && diffMode ? (
+                <SchemaDiffCanvas diffResult={diffResult} />
+              ) : mode === 'schema' ? (
+                schemaGraph ? (
+                  <DiagramCanvas
+                    ref={canvasRef}
+                    result={{ ok: true, schema: schemaGraph }}
+                    view="schema"
+                    onNodeClick={handleNodeClick}
+                  />
+                ) : (
+                  <SchemaEmptyState error={schemaError} />
+                )
+              ) : mode === 'query' && queryDiffMode ? null
+              : sql.trim() === '' ? (
+                <SampleGrid
+                  samples={SAMPLE_QUERIES}
+                  prompt="Paste a SELECT query — or pick a sample to get started:"
+                  onSelect={setSql}
                 />
+              ) : showCanvas ? (
+                <DiagramCanvas ref={canvasRef} result={result} view={view} onNodeClick={handleNodeClick} explainResult={explainResult} />
               ) : (
-                <SchemaEmptyState error={schemaError} />
-              )
-            ) : mode === 'query' && queryDiffMode ? null
-            : sql.trim() === '' ? (
-              <SampleGrid
-                samples={SAMPLE_QUERIES}
-                prompt="Paste a SELECT query — or pick a sample to get started:"
-                onSelect={setSql}
-              />
-            ) : showCanvas ? (
-              <DiagramCanvas ref={canvasRef} result={result} view={view} onNodeClick={handleNodeClick} explainResult={explainResult} />
-            ) : (
-              <EmptyState hasError={!result.ok && !!result.error} />
-            )}
+                <EmptyState hasError={!result.ok && !!result.error} />
+              )}
+              {mode === 'query' && showCanvas && !queryDiffMode && (
+                <DiagramStatusBar result={result} view={view} />
+              )}
+            </div>
             {panelData && (
               <NodeDetailPanel data={panelData} onClose={() => setPanelData(null)} />
-            )}
-            {mode === 'query' && showCanvas && !queryDiffMode && (
-              <DiagramStatusBar result={result} view={view} />
             )}
           </div>
         </section>
