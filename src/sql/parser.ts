@@ -4,16 +4,43 @@ import { buildFlowGraph } from './flowGraph';
 import { buildWriteImpactGraph } from './writeImpactGraph';
 import type { ParseResult } from './types';
 
+const SQL_KEYWORDS = new Set([
+  'AS','FROM','WHERE','AND','OR','ON','IN','NOT','IS','THEN','ELSE','END','WHEN','CASE',
+  'JOIN','LEFT','RIGHT','INNER','OUTER','CROSS','FULL','GROUP','ORDER','BY','HAVING',
+  'UNION','ALL','DISTINCT','SELECT','INTO','SET','VALUES','UPDATE','DELETE','INSERT',
+  'DESC','ASC','LIMIT','OFFSET','TOP','FETCH','NEXT','ROWS','ONLY','WITH','OVER',
+  'PARTITION','ROW_NUMBER','RANK','DENSE_RANK','DAY','MONTH','YEAR','HOUR','MINUTE',
+  'SECOND','GETDATE','DATEADD','DATEDIFF','BETWEEN','LIKE','EXISTS','NULL','TRUE','FALSE',
+]);
+
 /**
  * Strip T-SQL syntax that node-sql-parser can't handle but is semantically
- * irrelevant for visualization (hints, bare NULL aliases, etc.).
+ * irrelevant for visualization: table hints, bare aliases (no AS keyword).
  */
 function preprocessSql(sql: string): string {
   return sql
     // Remove table hints: WITH(NOLOCK), WITH (READUNCOMMITTED), etc.
     .replace(/\bWITH\s*\(\s*\w+(?:\s*,\s*\w+)*\s*\)/gi, '')
-    // Normalize bare NULL alias: `NULL ColumnName` → `NULL AS ColumnName`
-    .replace(/\bNULL\s+(?!AS\b)([A-Za-z_]\w*)/g, 'NULL AS $1');
+    // Bare alias after NULL: `NULL ColName` → `NULL AS ColName`
+    .replace(/\bNULL\s+(?!AS\s)([A-Za-z_]\w*)/gi, (_, alias) =>
+      SQL_KEYWORDS.has(alias.toUpperCase()) ? `NULL ${alias}` : `NULL AS ${alias}`
+    )
+    // Bare alias after string literal: `'...' ColName` → `'...' AS ColName`
+    .replace(/'([^']*)'\s+([A-Za-z_]\w*)/g, (match, str, alias) =>
+      SQL_KEYWORDS.has(alias.toUpperCase()) ? match : `'${str}' AS ${alias}`
+    )
+    // Bare alias after integer (e.g. `90000413 FieldLibraryID`, `1 FieldTypeId`)
+    .replace(/\b(\d+)\s+([A-Za-z_]\w*)/g, (match, num, alias) =>
+      SQL_KEYWORDS.has(alias.toUpperCase()) ? match : `${num} AS ${alias}`
+    )
+    // Bare alias after column ref: `tbl.col Alias` → `tbl.col AS Alias`
+    .replace(/\b(\w+\.\w+)\s+([A-Za-z_]\w*)/g, (match, col, alias) =>
+      SQL_KEYWORDS.has(alias.toUpperCase()) ? match : `${col} AS ${alias}`
+    )
+    // Bare alias after closing paren: `) Alias` → `) AS Alias` (e.g. window func result)
+    .replace(/\)\s+([A-Za-z_]\w*)/g, (match, alias) =>
+      SQL_KEYWORDS.has(alias.toUpperCase()) ? match : `) AS ${alias}`
+    );
 }
 
 export function parseSql(sql: string, database: string): ParseResult {
