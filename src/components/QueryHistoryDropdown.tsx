@@ -35,7 +35,7 @@ export default function QueryHistoryDropdown({ onSelect }: { onSelect: (sql: str
 
       {open && (
         <div
-          className="absolute top-full right-0 mt-1 w-72 rounded-lg border shadow-xl z-50 overflow-hidden"
+          className="absolute top-full left-0 mt-1 w-72 rounded-lg border shadow-xl z-50 overflow-hidden"
           style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
         >
           <div
