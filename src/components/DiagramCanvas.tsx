@@ -58,6 +58,15 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
       setActiveColumn(null);
     }, [result]);
 
+    // Escape clears active column/node selection
+    useEffect(() => {
+      function onKey(e: KeyboardEvent) {
+        if (e.key === 'Escape') setActiveColumn(null);
+      }
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }, []);
+
     const toggleLane = useCallback((lane: string) => {
       setCollapsedLanes((prev) => {
         const next = new Set(prev);
@@ -279,6 +288,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
           onNodeDoubleClick={(_, node) => {
             rfInstance.current?.fitView({ nodes: [node], padding: 0.35, maxZoom: 1.5, duration: 400 });
           }}
+          onPaneClick={() => setActiveColumn(null)}
         >
           {bgStyle === 'dots' && <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2436" />}
           {bgStyle === 'lines' && <Background variant={BackgroundVariant.Lines} gap={28} size={1} color="#1c2436" />}
