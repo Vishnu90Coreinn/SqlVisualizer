@@ -1,5 +1,58 @@
-import type { RelationshipGraph, RelNode, RelEdge, RelKind, RelEdgeKind, ColumnRole } from './types';
+import type { RelationshipGraph, RelNode, RelEdge, RelKind, RelEdgeKind, ColumnRole, RelColumn } from './types';
 import { collectColumnRefs, findSubqueries, fromEntryName, fromEntryAlias, isDerivedTable, exprToSql, uid, resetUidCounter } from './astHelpers';
+
+function buildResultNode(
+  finalAst: any,
+  nodes: Map<string, RelNode>,
+  nameToId: Map<string, string>,
+  edges: RelEdge[],
+  edgeDedupe: Set<string>,
+  _database: string
+): void {
+  if (!finalAst || !Array.isArray(finalAst.columns)) return;
+
+  const outputColumns: RelColumn[] = finalAst.columns
+    .map((c: any) => {
+      const name =
+        c.as ||
+        c.expr?.column?.expr?.value ||
+        c.expr?.column?.value ||
+        (typeof c.expr === 'string' ? c.expr : null);
+      return name ? { name: String(name), roles: new Set<ColumnRole>(['select']) } : null;
+    })
+    .filter(Boolean) as RelColumn[];
+
+  if (outputColumns.length === 0) return;
+
+  const resultId = uid('rel');
+  const maxDepth = Math.max(0, ...[...nodes.values()].map((n) => n.depth));
+  const resultNode: RelNode = {
+    id: resultId,
+    kind: 'result',
+    label: 'Query Result',
+    columns: outputColumns,
+    depth: maxDepth + 1,
+  };
+  nodes.set(resultId, resultNode);
+
+  const fromList: any[] = finalAst.from || [];
+  const addedSources = new Set<string>();
+  for (const entry of fromList) {
+    if (entry.expr?.ast) continue; // skip derived tables
+    const tname = entry.table || entry.name?.value || entry.name;
+    if (typeof tname !== 'string') continue;
+    const sourceId =
+      nameToId.get(`named:${tname.toLowerCase()}`) ??
+      nameToId.get(`sub:${tname.toLowerCase()}`);
+    if (!sourceId || addedSources.has(sourceId)) continue;
+    addedSources.add(sourceId);
+    const dedupeKey = `${sourceId}|${resultId}|→ output|`;
+    if (!edgeDedupe.has(dedupeKey)) {
+      edgeDedupe.add(dedupeKey);
+      edges.push({ id: uid('edge'), source: sourceId, target: resultId, kind: 'from', label: '→ output' });
+    }
+  }
+}
 
 export function buildRelationshipGraph(ast: any, database: string): RelationshipGraph {
   resetUidCounter();
@@ -184,6 +237,7 @@ export function buildRelationshipGraph(ast: any, database: string): Relationship
     if (node) attributeInnerColumns(stmt, node);
   }
 
+  const finalMainAst = ast;
   let mainAst = ast;
   let guard = 0;
   while (mainAst && guard < 10) {
@@ -196,6 +250,8 @@ export function buildRelationshipGraph(ast: any, database: string): Relationship
       break;
     }
   }
+
+  buildResultNode(finalMainAst, nodes, nameToId, edges, edgeDedupe, database);
 
   return { nodes: [...nodes.values()], edges };
 }

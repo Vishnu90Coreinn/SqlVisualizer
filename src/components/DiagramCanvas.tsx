@@ -181,9 +181,20 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
     const lineageNodeIds = useMemo(() => {
       if (!activeColumn || view !== 'relationship') return null;
       const connected = new Set<string>([activeColumn.nodeId]);
-      for (const e of edges) {
-        if (e.source === activeColumn.nodeId) connected.add(e.target);
-        if (e.target === activeColumn.nodeId) connected.add(e.source);
+      let frontier = [activeColumn.nodeId];
+      while (frontier.length > 0) {
+        const next: string[] = [];
+        for (const e of edges) {
+          if (frontier.includes(e.source) && !connected.has(e.target)) {
+            connected.add(e.target);
+            next.push(e.target);
+          }
+          if (frontier.includes(e.target) && !connected.has(e.source)) {
+            connected.add(e.source);
+            next.push(e.source);
+          }
+        }
+        frontier = next;
       }
       return connected;
     }, [activeColumn, edges, view]);

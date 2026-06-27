@@ -1,10 +1,10 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Table2, GitMerge, Brackets, PenLine } from 'lucide-react';
+import { Table2, GitMerge, Brackets, PenLine, ArrowRightToLine } from 'lucide-react';
 import type { RelNode } from '../../sql/types';
 import { KIND_COLOR, KIND_LABEL, ROLE_COLOR } from '../../lib/theme';
 import { REL_NODE_WIDTH } from '../../layout/dagreLayout';
 
-const ICONS = { table: Table2, cte: GitMerge, subquery: Brackets, 'write-target': PenLine } as const;
+const ICONS = { table: Table2, cte: GitMerge, subquery: Brackets, 'write-target': PenLine, result: ArrowRightToLine } as const;
 
 interface RelNodeData extends RelNode {
   _activeColumn?: { nodeId: string; col: string } | null;

@@ -1,6 +1,6 @@
 // ── Relationship (ER-style) graph ───────────────────────────────────────────
 
-export type RelKind = 'table' | 'cte' | 'subquery' | 'write-target';
+export type RelKind = 'table' | 'cte' | 'subquery' | 'write-target' | 'result';
 
 export interface RelColumn {
   name: string;

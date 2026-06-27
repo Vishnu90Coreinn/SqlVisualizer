@@ -11,9 +11,9 @@ export const PALETTE_LABELS: Record<DiagramPalette, string> = {
 
 // Per-palette table/cte/subquery colors
 export const PALETTE_KIND_COLOR: Record<DiagramPalette, Record<RelKind, string>> = {
-  amber: { table: '#4fd6e0', cte: '#f0a93f', subquery: '#b08af0', 'write-target': '#f0708c' },
-  ocean: { table: '#38bdf8', cte: '#818cf8', subquery: '#e879f9', 'write-target': '#f87171' },
-  forest: { table: '#4ade80', cte: '#facc15', subquery: '#a78bfa', 'write-target': '#f87171' },
+  amber:  { table: '#4fd6e0', cte: '#f0a93f', subquery: '#b08af0', 'write-target': '#f0708c', result: '#5fd896' },
+  ocean:  { table: '#38bdf8', cte: '#818cf8', subquery: '#e879f9', 'write-target': '#f87171', result: '#34d399' },
+  forest: { table: '#4ade80', cte: '#facc15', subquery: '#a78bfa', 'write-target': '#f87171', result: '#86efac' },
 };
 
 let _palette: DiagramPalette = 'amber';
@@ -25,6 +25,7 @@ export const KIND_COLOR: Record<RelKind, string> = {
   cte: '#f0a93f',
   subquery: '#b08af0',
   'write-target': '#f0708c',
+  result: '#5fd896',
 };
 
 export const KIND_LABEL: Record<RelKind, string> = {
@@ -32,6 +33,7 @@ export const KIND_LABEL: Record<RelKind, string> = {
   cte: 'CTE',
   subquery: 'SUBQUERY',
   'write-target': 'WRITE TARGET',
+  result: 'RESULT',
 };
 
 export const ROLE_COLOR: Record<ColumnRole, string> = {
