@@ -4,15 +4,29 @@ import { buildFlowGraph } from './flowGraph';
 import { buildWriteImpactGraph } from './writeImpactGraph';
 import type { ParseResult } from './types';
 
+/**
+ * Strip T-SQL syntax that node-sql-parser can't handle but is semantically
+ * irrelevant for visualization (hints, bare NULL aliases, etc.).
+ */
+function preprocessSql(sql: string): string {
+  return sql
+    // Remove table hints: WITH(NOLOCK), WITH (READUNCOMMITTED), etc.
+    .replace(/\bWITH\s*\(\s*\w+(?:\s*,\s*\w+)*\s*\)/gi, '')
+    // Normalize bare NULL alias: `NULL ColumnName` → `NULL AS ColumnName`
+    .replace(/\bNULL\s+(?!AS\b)([A-Za-z_]\w*)/g, 'NULL AS $1');
+}
+
 export function parseSql(sql: string, database: string): ParseResult {
   const trimmed = sql.trim();
   if (!trimmed) {
     return { ok: false, error: 'Paste a SQL query to get started.' };
   }
 
+  const preprocessed = preprocessSql(trimmed);
+
   let ast: any;
   try {
-    ast = parser.astify(trimmed, { database } as any);
+    ast = parser.astify(preprocessed, { database } as any);
   } catch (e: any) {
     const message: string = e?.message || 'Could not parse this SQL.';
     const lineMatch = message.match(/line (\d+)/i);
