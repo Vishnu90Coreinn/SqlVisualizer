@@ -200,7 +200,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
     }, [activeColumn, edges, view]);
 
     const lineageNodes = useMemo(() => {
-      if (!lineageNodeIds || view !== 'relationship') return explainNodes;
+      if (view !== 'relationship') return explainNodes;
       return explainNodes.map((n) => {
         if (n.type !== 'relation') return n;
         return {
@@ -212,7 +212,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasHandle, { result: ParseResult; vie
           },
         };
       });
-    }, [explainNodes, lineageNodeIds, activeColumn, onColumnClick, view]);
+    }, [explainNodes, activeColumn, onColumnClick, view]);
 
     const lineageEdges = useMemo(() => {
       if (!lineageNodeIds || view !== 'relationship') return displayEdges;
