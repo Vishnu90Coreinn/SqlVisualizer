@@ -19,11 +19,19 @@ export default function RelationNode({ data, selected }: NodeProps & { data: Rel
   const activeCol = data._activeColumn;
   const isThisNodeActive = activeCol?.nodeId === data.id;
   const activeColName = activeCol?.col ?? null;
+  const isNodeLevelActive = isThisNodeActive && activeColName === '__node__';
 
   return (
     <div
-      style={{ width: REL_NODE_WIDTH, borderColor: selected ? color : activeCol && !isThisNodeActive ? 'var(--color-border-soft)' : 'var(--color-border)', opacity: activeCol && !isThisNodeActive ? 0.4 : 1 }}
-      className="rounded-lg border bg-(--color-surface) shadow-lg overflow-hidden transition-all"
+      style={{
+        width: REL_NODE_WIDTH,
+        borderColor: selected || isNodeLevelActive ? color : activeCol && !isThisNodeActive ? 'var(--color-border-soft)' : 'var(--color-border)',
+        opacity: activeCol && !isThisNodeActive ? 0.4 : 1,
+        boxShadow: isNodeLevelActive ? `0 0 0 2px ${color}55` : undefined,
+      }}
+      className="rounded-lg border bg-(--color-surface) shadow-lg overflow-hidden transition-all cursor-pointer"
+      title={isNodeLevelActive ? 'Click to clear' : 'Click to trace all connections'}
+      onClick={() => data._onColumnClick?.(data.id, '__node__')}
     >
       <Handle type="target" position={Position.Left} style={{ background: color, border: 'none', width: 7, height: 7 }} />
       <Handle type="source" position={Position.Right} style={{ background: color, border: 'none', width: 7, height: 7 }} />
@@ -54,7 +62,7 @@ export default function RelationNode({ data, selected }: NodeProps & { data: Rel
           const primaryRole = [...col.roles][0];
           const roleColor = primaryRole ? ROLE_COLOR[primaryRole] : 'var(--color-text-faint)';
           const isActive = isThisNodeActive && activeColName === col.name;
-          const isDimmed = isThisNodeActive && activeColName !== null && activeColName !== col.name;
+          const isDimmed = isThisNodeActive && activeColName !== null && activeColName !== '__node__' && activeColName !== col.name;
 
           return (
             <div
