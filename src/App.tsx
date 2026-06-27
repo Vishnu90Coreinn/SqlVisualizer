@@ -429,10 +429,15 @@ export default function App() {
                     onClick={handleFormat}
                     title="Format SQL (Alt+Shift+F)"
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors hover:border-[#f0a93f] hover:text-[#f0a93f]"
-                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
+                    style={!result.ok && result.error && sql.trim() ? {
+                      borderColor: '#f0a93f',
+                      color: '#f0a93f',
+                      background: 'rgba(240,169,63,0.1)',
+                      animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
+                    } : { borderColor: 'var(--color-border)', color: 'var(--color-text-dim)', background: 'var(--color-bg-raised)' }}
                   >
                     <span className="font-mono text-[11px]">{'{}'}</span>
-                    Format
+                    Format{!result.ok && result.error && sql.trim() ? ' ←' : ''}
                   </button>
                   <QueryHistoryDropdown onSelect={setSql} />
                   <DialectConverterDropdown
