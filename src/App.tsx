@@ -360,7 +360,7 @@ export default function App() {
 
       <main className="flex-1 flex flex-col lg:flex-row min-h-0">
         <section
-          className="flex flex-col gap-2 p-3 shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px] overflow-hidden"
+          className="flex flex-col gap-2 p-3 shrink-0 border-b lg:border-b-0 lg:border-r min-h-[260px]"
           style={{ borderColor: 'var(--color-border)', width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? panelWidth : undefined, minWidth: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 280 : undefined }}
         >
           <Toolbar
