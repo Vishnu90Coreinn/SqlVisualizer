@@ -11,12 +11,14 @@ const DIALECT_MAP: Record<string, string> = {
 
 export function formatSql(sql: string, database: string): string {
   try {
-    return format(sql, {
+    const result = format(sql, {
       language: (DIALECT_MAP[database] ?? 'sql') as any,
       tabWidth: 2,
       keywordCase: 'upper',
       linesBetweenQueries: 2,
     });
+    // sql-formatter incorrectly adds a space after @ for T-SQL named parameters
+    return result.replace(/@ (\w+)/g, '@$1');
   } catch {
     return sql; // return unchanged if formatting fails
   }
